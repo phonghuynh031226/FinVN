@@ -65,7 +65,7 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
         alignItems: 'center',
         gap: '12px',
         padding: '14px 18px',
-        background: 'rgba(15, 23, 42, 0.95)',
+        background: 'var(--bg-secondary)',
         border: '1px solid var(--border-hover)',
         borderRadius: 'var(--radius-md)',
         boxShadow: 'var(--shadow-lg)',

@@ -25,7 +25,7 @@ import {
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (input: CreateBankAccountInput, credentials?: { username: string; password: string }) => Promise<void>;
+  onSubmit: (input: CreateBankAccountInput, credentials?: { username: string; password: string; browserId?: string }) => Promise<void>;
   editingAccount?: BankAccount | null;
   onUpdate?: (id: string, updates: UpdateBankAccountInput) => Promise<void>;
   existingAccounts?: BankAccount[];
@@ -175,6 +175,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
         {
           username: apiUsername.trim(),
           password: apiPassword,
+          browserId: result.browserId,
         }
       );
 
@@ -226,6 +227,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
         {
           username: apiUsername.trim(),
           password: apiPassword,
+          browserId: targetBrowserId,
         }
       );
 
@@ -256,32 +258,32 @@ export const AccountModal: React.FC<AccountModalProps> = ({
         className="glass-card animate-fade-in"
         style={{
           width: '100%',
-          maxWidth: '500px',
-          padding: '28px',
+          maxWidth: '470px',
+          padding: '20px 22px',
           background: 'var(--bg-secondary)',
           borderRadius: 'var(--radius-xl)',
           position: 'relative',
-          maxHeight: '90vh',
+          maxHeight: '94vh',
           overflowY: 'auto',
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               {step === 'OTP' ? (
                 <>
-                  <ShieldCheck size={22} className="text-primary" />
+                  <ShieldCheck size={20} className="text-primary" />
                   Kích hoạt trình duyệt Vietcombank
                 </>
               ) : (
                 <>
-                  <Wifi size={20} className="text-primary" />
+                  <Wifi size={18} className="text-primary" />
                   {editingAccount ? 'Chỉnh sửa tài khoản' : 'Kết nối ngân hàng thật'}
                 </>
               )}
             </h2>
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.785rem', color: 'var(--text-muted)', marginTop: '3px', marginBottom: 0 }}>
               {step === 'OTP'
                 ? 'Nhập mã SMS OTP do Vietcombank vừa gửi về điện thoại để cấp quyền vĩnh viễn'
                 : editingAccount
@@ -290,7 +292,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </p>
           </div>
           <button onClick={onClose} disabled={isSubmitting} className="btn btn-ghost btn-sm" style={{ padding: '6px' }}>
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -462,20 +464,20 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           /* === BƯỚC 1: NHẬP TÀI KHOẢN & MẬT KHẨU === */
           <form onSubmit={handleConnectSubmit}>
             {/* Ngân hàng phát hành */}
-            <div className="input-group">
-              <label className="input-label">Ngân hàng liên kết</label>
+            <div className="input-group" style={{ marginBottom: '10px', gap: '4px' }}>
+              <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Ngân hàng liên kết</label>
               <div className="input-with-icon">
-                <Building2 size={18} className="input-icon-left" />
+                <Building2 size={16} className="input-icon-left" />
                 <select
                   className="select-field"
                   value={bankName}
                   onChange={(e) => handleBankChange(e.target.value)}
                   disabled={Boolean(editingAccount) || isSubmitting}
-                  style={{ paddingLeft: '42px' }}
+                  style={{ padding: '0 12px 0 42px', height: '40px', fontSize: '0.875rem', boxSizing: 'border-box' }}
                 >
                   {SUPPORTED_BANKS.map((b) => (
                     <option key={b.code} value={b.shortName}>
-                      {b.shortName} — {b.name} {b.code === 'VCB' ? '(Đã hỗ trợ SMS OTP tự động)' : ''}
+                      {b.shortName} — {b.name} {b.code === 'VCB' ? '(SMS OTP)' : b.code === 'BIDV' ? '(SmartBanking - App 1 chạm)' : ''}
                     </option>
                   ))}
                 </select>
@@ -485,28 +487,35 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             {!editingAccount && (
               <>
                 {/* Tên đăng nhập */}
-                <div className="input-group">
-                  <label className="input-label">Tên đăng nhập Internet Banking (SĐT / CCCD)</label>
+                <div className="input-group" style={{ marginBottom: '10px', gap: '4px' }}>
+                  <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Tên đăng nhập Internet Banking (SĐT / CCCD)</label>
                   <div className="input-with-icon">
-                    <UserRound size={18} className="input-icon-left" />
+                    <UserRound size={16} className="input-icon-left" />
                     <input
                       className="input-field"
                       type="text"
                       value={apiUsername}
                       onChange={(e) => setApiUsername(e.target.value)}
-                      placeholder="Nhập số điện thoại đăng ký VCB"
+                      placeholder={
+                        bankName === 'BIDV'
+                          ? 'Nhập SĐT đăng ký BIDV SmartBanking'
+                          : bankName.includes('MB')
+                          ? 'Nhập tên đăng nhập MB Bank'
+                          : 'Nhập SĐT đăng ký VCB Digibank'
+                      }
                       disabled={isSubmitting}
                       autoComplete="off"
+                      style={{ padding: '8px 12px 8px 42px', height: '40px', fontSize: '0.875rem', boxSizing: 'border-box' }}
                       required
                     />
                   </div>
                 </div>
 
                 {/* Mật khẩu */}
-                <div className="input-group">
-                  <label className="input-label">Mật khẩu Internet Banking</label>
+                <div className="input-group" style={{ marginBottom: '10px', gap: '4px' }}>
+                  <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Mật khẩu Internet Banking</label>
                   <div className="input-with-icon" style={{ position: 'relative' }}>
-                    <LockKeyhole size={18} className="input-icon-left" />
+                    <LockKeyhole size={16} className="input-icon-left" />
                     <input
                       className="input-field"
                       type={showPassword ? 'text' : 'password'}
@@ -515,7 +524,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                       placeholder="Nhập mật khẩu"
                       disabled={isSubmitting}
                       autoComplete="new-password"
-                      style={{ paddingRight: '40px' }}
+                      style={{ padding: '8px 40px 8px 42px', height: '40px', fontSize: '0.875rem', boxSizing: 'border-box' }}
                       required
                     />
                     <button
@@ -533,7 +542,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                         padding: '4px',
                       }}
                     >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
                 </div>
@@ -541,12 +550,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             )}
 
             {/* Tên gợi nhớ */}
-            <div className="input-group">
-              <label className="input-label">
+            <div className="input-group" style={{ marginBottom: '10px', gap: '4px' }}>
+              <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
                 Tên gợi nhớ {editingAccount ? '' : '(Để trống sẽ tự lấy Tên chủ tài khoản)'}
               </label>
               <div className="input-with-icon">
-                <Tag size={18} className="input-icon-left" />
+                <Tag size={16} className="input-icon-left" />
                 <input
                   type="text"
                   className="input-field"
@@ -554,22 +563,23 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   disabled={isSubmitting}
+                  style={{ padding: '8px 12px 8px 42px', height: '40px', fontSize: '0.875rem', boxSizing: 'border-box' }}
                   required={Boolean(editingAccount)}
                 />
               </div>
             </div>
 
             {/* Chọn màu sắc thẻ */}
-            <div className="input-group">
-              <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Palette size={16} /> Chọn màu sắc thẻ
+            <div className="input-group" style={{ marginBottom: '10px', gap: '4px' }}>
+              <label className="input-label" style={{ fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Palette size={14} /> Chọn màu sắc thẻ
               </label>
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '8px',
-                  marginTop: '6px',
+                  gridTemplateColumns: 'repeat(8, 1fr)',
+                  gap: '6px',
+                  marginTop: '2px',
                 }}
               >
                 {CARD_COLOR_PRESETS.map((preset) => {
@@ -581,20 +591,20 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                       onClick={() => setSelectedColor(preset.gradient)}
                       disabled={isSubmitting}
                       style={{
-                        height: '38px',
-                        borderRadius: '8px',
+                        height: '24px',
+                        borderRadius: '6px',
                         background: preset.gradient,
                         border: isSelected ? '2px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.2)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: isSelected ? '0 0 10px rgba(255,255,255,0.6)' : 'none',
-                        transition: 'all 0.2s',
+                        boxShadow: isSelected ? '0 0 8px rgba(255,255,255,0.6)' : 'none',
+                        transition: 'all 0.15s',
                       }}
                       title={preset.name}
                     >
-                      {isSelected && <Check size={16} color="#ffffff" strokeWidth={3} />}
+                      {isSelected && <Check size={13} color="#ffffff" strokeWidth={3} />}
                     </button>
                   );
                 })}
@@ -604,64 +614,82 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             {!editingAccount && (
               <div
                 style={{
-                  marginTop: '12px',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  background: 'rgba(99, 102, 241, 0.1)',
-                  border: '1px solid rgba(99, 102, 241, 0.25)',
-                  color: '#a5b4fc',
-                  fontSize: '0.785rem',
+                  marginTop: '10px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  background: bankName === 'BIDV' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)',
+                  border: `1px solid ${bankName === 'BIDV' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`,
+                  color: bankName === 'BIDV' ? '#34d399' : '#a5b4fc',
+                  fontSize: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
+                  lineHeight: 1.4,
                 }}
               >
-                <Wifi size={16} style={{ flexShrink: 0 }} />
-                <span>
-                  Hệ thống tự động nhận diện thiết bị mới và chuyển sang xác thực SMS OTP tiện lợi.
-                </span>
+                {bankName === 'BIDV' ? (
+                  <>
+                    <Smartphone size={15} style={{ flexShrink: 0 }} />
+                    <span>
+                      <strong>BIDV SmartBanking:</strong> Mở app trên điện thoại và bấm <strong>"Xác nhận"</strong> khi có thông báo để kích hoạt vĩnh viễn.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Wifi size={15} style={{ flexShrink: 0 }} />
+                    <span>
+                      Hệ thống tự động nhận diện thiết bị mới và chuyển sang xác thực SMS OTP tiện lợi.
+                    </span>
+                  </>
+                )}
               </div>
             )}
 
             {isSubmitting && (
               <div
                 style={{
-                  marginTop: '14px',
-                  padding: '12px',
+                  marginTop: '10px',
+                  padding: '10px 12px',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(16, 185, 129, 0.15)',
                   color: '#34d399',
-                  fontSize: '0.825rem',
+                  fontSize: '0.8rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
+                  gap: '8px',
                 }}
               >
-                <RefreshCw size={16} className="animate-spin" />
+                <RefreshCw size={15} className="animate-spin" />
                 <span>{statusText || 'Đang xử lý...'}</span>
               </div>
             )}
 
             {/* Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-              <button type="button" onClick={onClose} disabled={isSubmitting} className="btn btn-secondary">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+              >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn btn-primary"
-                style={{ minWidth: '150px', justifyContent: 'center' }}
+                className="btn btn-primary btn-sm"
+                style={{ minWidth: '140px', justifyContent: 'center', padding: '8px 16px', fontSize: '0.85rem' }}
               >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw size={15} className="animate-spin" /> Đang kết nối...
+                    <RefreshCw size={14} className="animate-spin" /> Đang kết nối...
                   </>
                 ) : editingAccount ? (
                   'Lưu thay đổi'
                 ) : (
                   <>
-                    <Wifi size={15} /> Kết nối tài khoản
+                    <Wifi size={14} /> Kết nối tài khoản
                   </>
                 )}
               </button>

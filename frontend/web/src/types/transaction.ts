@@ -1,5 +1,5 @@
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
-export type TransactionSource = 'MANUAL' | 'SEPAY' | 'BANK_API';
+export type TransactionSource = 'MANUAL' | 'BANK_API';
 
 export interface Transaction {
   id: string;

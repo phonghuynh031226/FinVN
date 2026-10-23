@@ -13,12 +13,14 @@ interface StatCardsProps {
   summary: FinancialSummary;
   dateRangeLabel: string;
   accountCount: number;
+  isAggregated: boolean;
 }
 
 export const StatCards: React.FC<StatCardsProps> = ({
   summary,
   dateRangeLabel,
   accountCount,
+  isAggregated,
 }) => {
   const savingsRate =
     summary.totalIncome > 0
@@ -32,18 +34,19 @@ export const StatCards: React.FC<StatCardsProps> = ({
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '16px',
-        marginBottom: '18px',
+        gap: '14px',
+        marginBottom: '12px',
       }}
     >
       {/* 1. Tổng số dư hiện tại */}
       <div
         className="glass-card animate-fade-in"
         style={{
-          padding: '16px 20px',
+          padding: '12px 18px',
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, var(--bg-card) 100%)',
+          border: '1px solid var(--border-subtle)',
         }}
       >
         <div
@@ -54,7 +57,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             width: '100px',
             height: '100px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%)',
           }}
         />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -65,7 +68,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             style={{
               padding: '8px',
               borderRadius: '12px',
-              background: 'rgba(99, 102, 241, 0.15)',
+              background: 'rgba(99, 102, 241, 0.12)',
               color: '#818cf8',
             }}
           >
@@ -76,8 +79,10 @@ export const StatCards: React.FC<StatCardsProps> = ({
           {formatVND(summary.totalBalance)}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.785rem', color: 'var(--text-muted)' }}>
-          <span className="badge badge-neutral">{accountCount} tài khoản hoạt động</span>
-          <span>Đã cộng dồn</span>
+          <span className="badge badge-neutral">
+            {accountCount} {isAggregated ? 'tài khoản hoạt động' : 'tài khoản được chọn'}
+          </span>
+          <span>{isAggregated ? 'Đã cộng dồn' : 'Số dư riêng lẻ'}</span>
         </div>
       </div>
 
@@ -85,10 +90,11 @@ export const StatCards: React.FC<StatCardsProps> = ({
       <div
         className="glass-card animate-fade-in"
         style={{
-          padding: '16px 20px',
+          padding: '12px 18px',
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--bg-card) 100%)',
+          border: '1px solid var(--border-subtle)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -99,7 +105,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             style={{
               padding: '8px',
               borderRadius: '12px',
-              background: 'rgba(16, 185, 129, 0.15)',
+              background: 'rgba(16, 185, 129, 0.12)',
               color: '#10b981',
             }}
           >
@@ -118,10 +124,11 @@ export const StatCards: React.FC<StatCardsProps> = ({
       <div
         className="glass-card animate-fade-in"
         style={{
-          padding: '16px 20px',
+          padding: '12px 18px',
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%)',
+          background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, var(--bg-card) 100%)',
+          border: '1px solid var(--border-subtle)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -132,7 +139,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             style={{
               padding: '8px',
               borderRadius: '12px',
-              background: 'rgba(244, 63, 94, 0.15)',
+              background: 'rgba(244, 63, 94, 0.12)',
               color: '#fb7185',
             }}
           >
@@ -151,12 +158,13 @@ export const StatCards: React.FC<StatCardsProps> = ({
       <div
         className="glass-card animate-fade-in"
         style={{
-          padding: '16px 20px',
+          padding: '12px 18px',
           position: 'relative',
           overflow: 'hidden',
           background: isNetPositive
-            ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%)'
-            : 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%)',
+            ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, var(--bg-card) 100%)'
+            : 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, var(--bg-card) 100%)',
+          border: '1px solid var(--border-subtle)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -167,7 +175,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             style={{
               padding: '8px',
               borderRadius: '12px',
-              background: isNetPositive ? 'rgba(6, 182, 212, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              background: isNetPositive ? 'rgba(6, 182, 212, 0.12)' : 'rgba(239, 68, 68, 0.12)',
               color: isNetPositive ? '#06b6d4' : '#ef4444',
             }}
           >
@@ -197,7 +205,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             width: '100%',
             height: '4px',
             borderRadius: '9999px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'var(--border-subtle)',
             marginTop: '6px',
             overflow: 'hidden',
           }}

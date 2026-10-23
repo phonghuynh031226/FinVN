@@ -8,19 +8,7 @@ import { TransactionFilter } from '../types/filter';
 import { storageService } from './storage';
 import { getCategoryDef } from '../constants/categories';
 import { BankTransaction } from './bankApi';
-
-export interface SepayWebhookPayload {
-  gateway: string;
-  transactionDate: string;
-  accountNumber: string;
-  code?: string | null;
-  content: string;
-  transferType: 'in' | 'out';
-  transferAmount: number;
-  accumulated: number;
-  subAccount?: string | null;
-  referenceCode: string;
-}
+import { getLocalDateString } from '../utils/date';
 
 export const dataService = {
   // --- ACCOUNTS ---
@@ -54,8 +42,6 @@ export const dataService = {
       initialBalance: Number(input.initialBalance || 0),
       currentBalance: Number(input.initialBalance || 0),
       color: input.color,
-       sepayStatus: 'NOT_CONNECTED',
-      sepayRef: `${input.bankName.substring(0, 3).toUpperCase()}-${input.accountNumber.slice(-4)}`,
       deletedAt: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -127,7 +113,7 @@ export const dataService = {
     if (filter.dateRange) {
       const { startDate, endDate } = filter.dateRange;
       list = list.filter((t) => {
-        const txDay = t.transactionDate.slice(0, 10);
+        const txDay = getLocalDateString(t.transactionDate);
         return txDay >= startDate && txDay <= endDate;
       });
     }
@@ -282,86 +268,6 @@ export const dataService = {
     storageService.saveTransactions(remaining);
   },
 
-  // --- SEPAY SIMULATOR / WEBHOOK INGESTION ---
-  async simulateSepayWebhook(payload: SepayWebhookPayload): Promise<Transaction> {
-    const txs = storageService.getTransactions();
-    const accounts = storageService.getAccounts();
-
-    // Idempotency check: Don't insert duplicate reference code
-    const existing = txs.find((t) => t.sourceReference === payload.referenceCode);
-    if (existing) {
-      throw new Error(`Giao dịch tham chiếu ${payload.referenceCode} đã tồn tại trong hệ thống (Idempotent).`);
-    }
-
-    // Match bank account
-    let targetAccount = accounts.find(
-      (a) =>
-        !a.deletedAt &&
-        (a.accountNumber === payload.accountNumber ||
-          payload.accountNumber.endsWith(a.accountNumber.slice(-4)) ||
-          a.bankName.toLowerCase().includes(payload.gateway.toLowerCase()))
-    );
-
-    if (!targetAccount) {
-      targetAccount = accounts.find((a) => !a.deletedAt) || accounts[0];
-    }
-
-    if (!targetAccount) {
-      throw new Error('Chưa có tài khoản ngân hàng nào trong hệ thống.');
-    }
-
-    const type = payload.transferType === 'in' ? 'INCOME' : 'EXPENSE';
-    const amount = Math.abs(Number(payload.transferAmount));
-
-    // Smart auto category from content
-    let autoCategory = type === 'INCOME' ? 'Thu nhập khác' : 'Chi tiêu khác';
-    const cLower = payload.content.toLowerCase();
-    if (cLower.includes('luong') || cLower.includes('salary')) autoCategory = 'Lương';
-    else if (cLower.includes('thuong') || cLower.includes('bonus')) autoCategory = 'Thưởng';
-    else if (cLower.includes('lai') || cLower.includes('co tuc')) autoCategory = 'Đầu tư & Cổ tức';
-    else if (cLower.includes('an') || cLower.includes('cafe') || cLower.includes('food') || cLower.includes('nha hang')) autoCategory = 'Ăn uống';
-    else if (cLower.includes('xang') || cLower.includes('grab') || cLower.includes('be ') || cLower.includes('petro')) autoCategory = 'Đi lại & Xăng xe';
-    else if (cLower.includes('dien') || cLower.includes('nuoc') || cLower.includes('evn') || cLower.includes('internet')) autoCategory = 'Hóa đơn dịch vụ';
-    else if (cLower.includes('shopee') || cLower.includes('lazada') || cLower.includes('tiki') || cLower.includes('mua')) autoCategory = 'Mua sắm';
-
-    const newTx: Transaction = {
-      id: `tx-sepay-${Date.now()}`,
-      userId: 'user-demo',
-      accountId: targetAccount.id,
-      amount,
-      type,
-      category: autoCategory,
-      userCategory: autoCategory,
-      description: payload.content,
-      userNote: null,
-      transactionDate: payload.transactionDate || new Date().toISOString(),
-      source: 'SEPAY',
-      sourceReference: payload.referenceCode,
-      rawData: payload,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      bankAccount: {
-        displayName: targetAccount.displayName,
-        bankName: targetAccount.bankName,
-        accountNumber: targetAccount.accountNumber,
-      },
-    };
-
-    // Update account balance
-    if (type === 'INCOME') {
-      targetAccount.currentBalance += amount;
-    } else {
-      targetAccount.currentBalance -= amount;
-    }
-    targetAccount.updatedAt = new Date().toISOString();
-    storageService.saveAccounts(accounts);
-
-    txs.unshift(newTx);
-    storageService.saveTransactions(txs);
-
-    return newTx;
-  },
-
   // Import transactions from Bank Connector API (MBBank, etc.)
   async importBankTransactions(
     accountId: string,
@@ -373,10 +279,26 @@ export const dataService = {
     if (!targetAccount) throw new Error('Tài khoản ngân hàng không tồn tại');
 
     const existingTxs = storageService.getTransactions();
-    const existingRefs = new Set(
-      existingTxs
-        .map((t) => t.sourceReference)
-        .filter((ref): ref is string => Boolean(ref))
+
+    // Hàm sinh dấu vân tay nhận diện giao dịch (Fingerprint):
+    // Thay vì chỉ so sánh mã tham chiếu (btx.reference), ta kết hợp [Tài khoản + Mã GD + Số tiền + Loại GD + Ngày].
+    // Lí do: Trong ngân hàng (như BIDV rút ATM), giao dịch rút tiền chính (-900.000đ) và phí rút tiền (-3.300đ)
+    // CÓ CÙNG MÃ THAM CHIẾU (Mã GD / refNo)! Nếu chỉ kiểm tra refNo thì giao dịch rút tiền sẽ bị nuốt mất!
+    const makeTxKey = (accId: string, ref: string | null | undefined, amt: number, txType: string, dateStr: string | null | undefined) => {
+      let dKey = '';
+      if (dateStr) {
+        const parts = dateStr.match(/(\d{4}-\d{2}-\d{2})/);
+        if (parts) dKey = parts[1];
+        else {
+          const dm = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+          if (dm) dKey = `${dm[3]}-${dm[2].padStart(2, '0')}-${dm[1].padStart(2, '0')}`;
+        }
+      }
+      return `${accId}_${ref || 'noref'}_${Math.round(amt)}_${txType}_${dKey}`;
+    };
+
+    const existingKeys = new Set(
+      existingTxs.map((t) => makeTxKey(t.accountId, t.sourceReference, t.amount, t.type, t.transactionDate))
     );
 
     let importedCount = 0;
@@ -385,12 +307,15 @@ export const dataService = {
     const bankLabel = targetAccount.bankName || 'Ngân hàng';
 
     for (const btx of bankTxs) {
-      if (btx.reference && existingRefs.has(btx.reference)) {
-        continue; // Idempotency check: tránh trùng lặp giao dịch
-      }
-
       const amount = Math.abs(Number(btx.amount) || 0);
       const isIncome = btx.type === 'INCOME';
+      const txType = isIncome ? 'INCOME' : 'EXPENSE';
+
+      const txKey = makeTxKey(targetAccount.id, btx.reference, amount, txType, btx.transaction_date);
+      if (existingKeys.has(txKey)) {
+        continue; // Idempotency check: tránh trùng lặp đúng giao dịch
+      }
+
       const categoryName = isIncome ? `Thu nhập ${bankLabel}` : `Chi tiêu ${bankLabel}`;
 
       let txDateIso = new Date().toISOString();
@@ -399,11 +324,10 @@ export const dataService = {
         if (parts) {
           const [, d, m, y] = parts;
           const timePart = btx.transaction_date.match(/(\d{1,2}):(\d{1,2}):(\d{1,2})/);
-          if (timePart) {
-            txDateIso = new Date(Number(y), Number(m) - 1, Number(d), Number(timePart[1]), Number(timePart[2]), Number(timePart[3])).toISOString();
-          } else {
-            txDateIso = new Date(Number(y), Number(m) - 1, Number(d)).toISOString();
-          }
+          const hh = timePart ? timePart[1].padStart(2, '0') : '00';
+          const mm = timePart ? timePart[2].padStart(2, '0') : '00';
+          const ss = timePart ? timePart[3].padStart(2, '0') : '00';
+          txDateIso = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hh}:${mm}:${ss}+07:00`;
         }
       }
 
@@ -412,7 +336,7 @@ export const dataService = {
         userId: 'user-demo',
         accountId: targetAccount.id,
         amount,
-        type: isIncome ? 'INCOME' : 'EXPENSE',
+        type: txType,
         category: categoryName,
         userCategory: categoryName,
         description: btx.description?.trim() || `Giao dịch ${bankLabel}`,
@@ -430,12 +354,13 @@ export const dataService = {
       };
 
       newTxs.push(newTx);
-      if (btx.reference) existingRefs.add(btx.reference);
+      existingKeys.add(txKey);
       importedCount++;
     }
 
     if (newTxs.length > 0) {
-      existingTxs.unshift(...newTxs);
+      existingTxs.push(...newTxs);
+      existingTxs.sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
       storageService.saveTransactions(existingTxs);
     }
 

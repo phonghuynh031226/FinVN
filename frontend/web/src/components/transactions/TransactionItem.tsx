@@ -53,9 +53,16 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, o
           {isIncome ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
         </div>
 
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ marginBottom: '2px' }}>
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          <div
+            style={{
+              marginBottom: '2px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            <span style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               {transaction.userNote || transaction.description || 'Giao dịch không tên'}
             </span>
           </div>

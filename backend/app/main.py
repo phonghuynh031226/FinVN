@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import os
 from datetime import date, timedelta
 from typing import Literal
@@ -92,24 +104,22 @@ class VietcombankAdapter(BankAdapter):
         return normalized
 
 
-class BIDVAdapter(BankAdapter):
+class BIDVBankAdapter(BankAdapter):
     code: BankCode = "bidv"
 
     def connect(self, request: ConnectRequest) -> AccountSnapshot:
-        raise NotImplementedError(
-            "BIDV adapter cần chữ ký RSA và cấu hình merchant/service theo tài liệu."
-        )
+        from .adapters.bidv import BIDVAdapter
+        return BIDVAdapter().connect(request)
 
     def transactions(self, request: TransactionRequest) -> list[NormalizedTransaction]:
-        raise NotImplementedError(
-            "BIDV transaction history không có trong tài liệu API hiện tại."
-        )
+        from .adapters.bidv import BIDVAdapter
+        return BIDVAdapter().transactions(request)
 
 
 adapters: dict[BankCode, BankAdapter] = {
     "mb": MBBankAdapter(),
     "vcb": VietcombankAdapter(),
-    "bidv": BIDVAdapter(),
+    "bidv": BIDVBankAdapter(),
 }
 
 app = FastAPI(title="Personal Finance Bank Gateway", version="0.1.0")
@@ -144,8 +154,9 @@ def transactions(bank: BankCode, request: TransactionRequest) -> list[Normalized
         raise HTTPException(status_code=502, detail=str(error) or "Không thể lấy lịch sử giao dịch.") from error
 
 
+from pathlib import Path
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from .adapters.vcb import VCBNeedOtpException
+from .exceptions import VCBNeedOtpException, BIDVNeedConfirmAppException
 
 @app.post("/api/banks/{bank}/connect")
 def connect(bank: BankCode, request: ConnectRequest):
@@ -160,6 +171,16 @@ def connect(bank: BankCode, request: ConnectRequest):
                 "browser_id": otp_err.browser_id,
                 "browser_token": otp_err.browser_token,
                 "duration": otp_err.duration,
+            },
+        )
+    except BIDVNeedConfirmAppException as app_err:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "NEED_CONFIRM_APP",
+                "message": app_err.message,
+                "user": app_err.user,
+                "duration": app_err.duration,
             },
         )
     except NotImplementedError as error:
@@ -178,27 +199,14 @@ class VerifyOtpRequest(BaseModel):
 
 @app.post("/api/banks/vcb/verify-otp")
 def verify_vcb_otp(payload: VerifyOtpRequest):
-    try:
-        # 1. Lưu Browser ID đã xác thực vào cấu hình backend
-        with open(BROWSER_ID_FILE, "w", encoding="utf-8") as f:
-            f.write(payload.browser_id.strip())
-
-        # 2. Đăng nhập và lấy thông tin tài khoản
-        from .adapters.vcb import VCBAdapter
-        adapter = VCBAdapter()
-        req = ConnectRequest(
-            username=payload.username.strip(),
-            password=payload.password,
-            browser_id=payload.browser_id.strip(),
-        )
-        snapshot = adapter.connect(req)
-        return snapshot
-    except Exception as error:
-        raise HTTPException(status_code=400, detail=str(error) or "Xác thực OTP thất bại.") from error
-from pathlib import Path
-
+    raise HTTPException(
+        status_code=501,
+        detail=(
+            "Thư viện VCB hiện tại không hỗ trợ gửi OTP để xác minh trình duyệt. "
+            "Hãy hoàn tất xác thực trên trang VCB chính thức rồi thử kết nối lại."
+        ),
+    )
 FP_JS_PATH = Path(__file__).resolve().parent.parent.parent / "frontend" / "web" / "node_modules" / "@fingerprintjs" / "fingerprintjs" / "dist" / "fp.min.js"
-BROWSER_ID_FILE = Path(__file__).resolve().parent.parent / "vcb_browser_id.txt"
 
 class SaveBrowserIdRequest(BaseModel):
     browser_id: str
@@ -214,8 +222,6 @@ def save_browser_id(payload: SaveBrowserIdRequest):
     bid = payload.browser_id.strip()
     if not bid:
         raise HTTPException(status_code=400, detail="Browser ID cannot be empty")
-    with open(BROWSER_ID_FILE, "w", encoding="utf-8") as f:
-        f.write(bid)
     return {"status": "ok", "saved_browser_id": bid}
 
 @app.get("/browser-id", response_class=HTMLResponse)

@@ -2,17 +2,14 @@ from __future__ import annotations
 
 import h5py
 import numpy as np
+import os
 from pathlib import Path
 from PIL import Image
 
-MODEL_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "TÀI LIỆU API BANK"
-    / "VCB-API-master"
-    / "VCB-API-master"
-    / "model"
-    / "captcha_model.h5"
-)
+def _find_model_path() -> Path:
+    return Path(__file__).resolve().parent / "vcb_lib" / "model" / "captcha_model.h5"
+
+MODEL_PATH = _find_model_path()
 
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-np.clip(x, -30, 30)))

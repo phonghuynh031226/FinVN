@@ -10,6 +10,25 @@ export interface BankTransaction {
   reference: string | null;
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 25000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return res;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Kết nối đến máy chủ ngân hàng quá thời gian chờ (${timeoutMs / 1000}s). Vui lòng thử lại.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export const bankApiService = {
   isConfigured(): boolean {
     return Boolean(CONNECTOR_URL);
@@ -20,7 +39,7 @@ export const bankApiService = {
       throw new Error('Chưa cấu hình máy chủ kết nối ngân hàng. Hãy thêm VITE_BANK_CONNECTOR_URL vào file .env.local.');
     }
 
-    const response = await fetch(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/connect`, {
+    const response = await fetchWithTimeout(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/connect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -29,7 +48,7 @@ export const bankApiService = {
         browser_id: input.browserId,
         account_number: input.accountNumber,
       }),
-    });
+    }, 20000);
 
     const payload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(payload?.detail || payload?.message || 'Không thể kết nối ngân hàng.');
@@ -58,7 +77,7 @@ export const bankApiService = {
       throw new Error('Chưa cấu hình máy chủ kết nối ngân hàng.');
     }
 
-    const response = await fetch(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/verify-otp`, {
+    const response = await fetchWithTimeout(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -68,7 +87,7 @@ export const bankApiService = {
         browser_token: input.browserToken,
         otp: input.otp,
       }),
-    });
+    }, 20000);
 
     const payload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(payload?.detail || payload?.message || 'Xác thực OTP thất bại.');
@@ -84,7 +103,7 @@ export const bankApiService = {
 
   async getTransactions(input: ConnectBankAccountInput, fromDate: string, toDate: string): Promise<BankTransaction[]> {
     if (!CONNECTOR_URL) throw new Error('Chưa cấu hình máy chủ kết nối ngân hàng.');
-    const response = await fetch(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/transactions`, {
+    const response = await fetchWithTimeout(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -95,7 +114,7 @@ export const bankApiService = {
         from_date: fromDate,
         to_date: toDate,
       }),
-    });
+    }, 60000);
     const payload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(payload?.detail || payload?.message || 'Không thể lấy lịch sử giao dịch.');
     return payload as BankTransaction[];

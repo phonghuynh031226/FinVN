@@ -1,8 +1,8 @@
-﻿# Validation & Security Rules — Kiểm tra dữ liệu, Phân quyền và Xử lý lỗi
+# Validation & Security Rules — Kiểm tra dữ liệu, Phân quyền và Xử lý lỗi
 
 ## Nguyên tắc tổng quát
 
-- **MUST** validate ở cả **client (mobile)** và **server (backend)** — không chỉ một bên.
+- **MUST** validate ở cả **client (Web)** và **server (backend)** — không chỉ một bên.
 - Server là nguồn sự thật; client validation chỉ để UX nhanh hơn, không thay thế server validation.
 - **MUST** dùng thư viện schema validation (ví dụ: `zod` cho TypeScript) ở backend; không validate thủ công bằng if-else lồng nhau.
 - Mọi lỗi validation trả về HTTP 400 với format: `{ error: { code: "VALIDATION_ERROR", message: "...", fields: { fieldName: "mô tả lỗi bằng tiếng Việt" } } }`.
@@ -32,7 +32,7 @@
 
 ## Phân quyền (Authorization)
 
-- **MUST** kiểm tra `userId` từ JWT/session đối với mọi resource (tài khoản, giao dịch, webhook settings).
+- **MUST** kiểm tra `userId` từ JWT/session đối với mọi resource (tài khoản, giao dịch và cấu hình tích hợp).
 - Mọi endpoint **MUST** có middleware xác thực auth trước khi đến controller.
 - Backend **MUST** kiểm tra: `account.userId === req.user.id` trước mọi thao tác đọc/ghi/xóa tài khoản và giao dịch.
 - **DO NOT** tin vào `userId` do client gửi lên trong body; luôn lấy từ token đã xác thực.
@@ -51,7 +51,7 @@
 - **MUST** xử lý: mất mạng, timeout (set timeout 30s cho API call), response rỗng, null fields, JSON parse error.
 - Khi API trả `null` hoặc thiếu field, dùng default value hợp lý thay vì crash; log warning.
 - Danh sách giao dịch rỗng: hiển thị empty state "Chưa có giao dịch nào" — không crash, không spinner vô hạn.
-- Khi xóa tài khoản thất bại ở backend, mobile phải hiển thị lỗi và **không** xóa tài khoản khỏi local state.
+- Khi xóa tài khoản thất bại ở backend, giao diện Web phải hiển thị lỗi và **không** xóa tài khoản khỏi local state.
 
 ## Thông báo lỗi người dùng
 
@@ -62,6 +62,6 @@
 
 ## Rate Limiting & Anti-abuse
 
-- **MUST** có rate limiting cho endpoint nhạy cảm: login, webhook, connect SePay (ví dụ 10 req/phút/IP).
+- **MUST** có rate limiting cho endpoint nhạy cảm như login và webhook (ví dụ 10 req/phút/IP).
 - Validate kích thước payload webhook: từ chối nếu > 1MB.
 - **DO NOT** expose thông tin nội bộ (version, framework, DB type) trong response header.

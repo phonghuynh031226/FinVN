@@ -4,10 +4,13 @@ import {
   Calendar,
   Filter,
   ChevronDown,
+  Zap,
+  Plus,
 } from 'lucide-react';
 import { BankAccount } from '../../types/bankAccount';
 import { TransactionFilter, DateRangePreset } from '../../types/filter';
 import { getDateRangeByPreset } from '../../utils/date';
+import dayjs from 'dayjs';
 
 interface HeaderProps {
   title: string;
@@ -15,7 +18,8 @@ interface HeaderProps {
   onOpenMobileMenu: () => void;
   onOpenAddTransaction: () => void;
   onOpenAddAccount: () => void;
-  onOpenSepaySimulator: () => void;
+  onSyncAll?: () => void;
+  isSyncing?: boolean;
   accounts: BankAccount[];
   filter: TransactionFilter;
   onFilterChange: (newFilter: TransactionFilter) => void;
@@ -26,6 +30,9 @@ export const Header: React.FC<HeaderProps> = ({
   title,
   subtitle,
   onOpenMobileMenu,
+  onOpenAddAccount,
+  onSyncAll,
+  isSyncing = false,
   accounts,
   filter,
   onFilterChange,
@@ -69,10 +76,26 @@ export const Header: React.FC<HeaderProps> = ({
 
   // 4 mốc chuẩn App Ngân hàng Việt Nam
   const bankDatePresets = [
-    { preset: 'TODAY' as DateRangePreset, label: 'Hôm nay' },
-    { preset: 'LAST_7_DAYS' as DateRangePreset, label: '7 ngày qua' },
-    { preset: 'LAST_30_DAYS' as DateRangePreset, label: '30 ngày qua' },
-    { preset: 'THIS_MONTH' as DateRangePreset, label: 'Tháng này' },
+    {
+      preset: 'TODAY' as DateRangePreset,
+      label: 'Hôm nay',
+      tooltip: 'Chỉ các giao dịch phát sinh trong hôm nay',
+    },
+    {
+      preset: 'LAST_7_DAYS' as DateRangePreset,
+      label: '7 ngày qua',
+      tooltip: 'Từ 7 ngày trước đến hôm nay',
+    },
+    {
+      preset: 'LAST_30_DAYS' as DateRangePreset,
+      label: '30 ngày qua',
+      tooltip: 'Từ 30 ngày trước đến ngày hiện tại (ví dụ: 23/09 - 23/10)',
+    },
+    {
+      preset: 'THIS_MONTH' as DateRangePreset,
+      label: 'Tháng này',
+      tooltip: 'Từ ngày 01 của tháng đến ngày hiện tại (ví dụ: 01/10 - 23/10)',
+    },
   ];
 
   return (
@@ -82,8 +105,9 @@ export const Header: React.FC<HeaderProps> = ({
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        padding: '12px 32px',
+        padding: '10px 28px',
         borderBottom: '1px solid var(--border-subtle)',
+        flexShrink: 0,
       }}
     >
       <div
@@ -110,6 +134,31 @@ export const Header: React.FC<HeaderProps> = ({
             </h1>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{subtitle}</p>
           </div>
+        </div>
+
+        {/* Right side actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {onSyncAll && (
+            <button
+              type="button"
+              onClick={onSyncAll}
+              disabled={isSyncing}
+              className="btn btn-secondary btn-sm"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(99, 102, 241, 0.15)',
+                color: '#a5b4fc',
+                borderColor: 'rgba(99, 102, 241, 0.35)',
+                fontWeight: 600,
+              }}
+              title="Tự động kết nối tất cả ngân hàng, cập nhật số dư thực tế và nạp giao dịch mới"
+            >
+              <Zap size={14} className={isSyncing ? 'animate-spin' : ''} />
+              <span>{isSyncing ? 'Đang tự động đồng bộ...' : '⚡ Tự động đồng bộ ngay'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -185,6 +234,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={() => setShowCustomPicker(!showCustomPicker)}
+                title="Tự chọn khoảng ngày tùy chỉnh"
                 style={{
                   padding: '5px 12px',
                   borderRadius: 'var(--radius-full)',
@@ -277,6 +327,26 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Nhãn hiển thị chính xác khoảng ngày bộ lọc đang áp dụng */}
+            <span
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid var(--border-subtle)',
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              title={`Khoảng ngày đang áp dụng: ${dayjs(filter.dateRange.startDate).format('DD/MM/YYYY')} đến ${dayjs(filter.dateRange.endDate).format('DD/MM/YYYY')}`}
+            >
+              📅 {dayjs(filter.dateRange.startDate).format('DD/MM/YYYY')} – {dayjs(filter.dateRange.endDate).format('DD/MM/YYYY')}
+            </span>
           </div>
         </div>
       )}

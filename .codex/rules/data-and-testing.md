@@ -22,9 +22,6 @@ CREATE TABLE bank_accounts (
   account_number  TEXT NOT NULL,                  -- lưu đầy đủ, che khi trả API
   initial_balance BIGINT NOT NULL DEFAULT 0,      -- VND, đơn vị đồng
   current_balance BIGINT NOT NULL DEFAULT 0,
-  sepay_status    TEXT NOT NULL DEFAULT 'NOT_CONNECTED'
-                  CHECK (sepay_status IN ('NOT_CONNECTED','PENDING','CONNECTED','ERROR')),
-  sepay_ref       TEXT,                           -- reference từ SePay
   deleted_at      TIMESTAMPTZ,                    -- soft delete
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -45,34 +42,16 @@ CREATE TABLE transactions (
   description      TEXT,                  -- mô tả gốc từ ngân hàng
   user_note        TEXT,                  -- ghi chú do user thêm
   transaction_date TIMESTAMPTZ NOT NULL,
-  source           TEXT NOT NULL DEFAULT 'MANUAL'
-                   CHECK (source IN ('MANUAL','SEPAY')),
-  source_reference TEXT,                  -- referenceCode từ SePay
-  raw_data         JSONB,                 -- payload gốc từ webhook, không sửa
+  source           TEXT NOT NULL DEFAULT 'MANUAL',
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (source, source_reference)       -- chống trùng webhook
-);
-```
-
-### Bảng `webhook_events`
-```sql
-CREATE TABLE webhook_events (
-  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source        TEXT NOT NULL DEFAULT 'SEPAY',
-  raw_payload   JSONB NOT NULL,
-  status        TEXT NOT NULL DEFAULT 'PENDING'
-                CHECK (status IN ('PENDING','PROCESSED','FAILED','SKIPPED')),
-  error_message TEXT,
-  retry_count   INT NOT NULL DEFAULT 0,
-  received_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  processed_at  TIMESTAMPTZ
+  UNIQUE (source, source_reference)       -- chống giao dịch trùng theo nguồn
 );
 ```
 
 ## Quy tắc Migration
 
-- **MUST** đặt migration file theo thứ tự sequential: `001_init.sql`, `002_add_sepay_ref.sql`, …
+- **MUST** đặt migration file theo thứ tự sequential.
 - **DO NOT** xóa hoặc sửa migration đã chạy trên production; tạo migration mới để sửa.
 - Mỗi migration phải có section `-- UP` và `-- DOWN` (rollback).
 - **MUST** chạy migration trong transaction; rollback tự động nếu có lỗi.
@@ -83,13 +62,11 @@ CREATE TABLE webhook_events (
   CREATE INDEX idx_bank_accounts_user     ON bank_accounts (user_id) WHERE deleted_at IS NULL;
   ```
 
-## Đồng bộ giao dịch từ SePay
+## Đồng bộ giao dịch ngân hàng
 
-- Mọi giao dịch từ SePay **MUST** có `source = 'SEPAY'` và `source_reference` (referenceCode từ SePay).
-- Trước khi insert: `SELECT id FROM transactions WHERE source='SEPAY' AND source_reference=$1`.
-- Nếu đã tồn tại: ghi log "DUPLICATE_WEBHOOK ref=<ref>" và return sớm, không insert.
-- `raw_data` lưu toàn bộ payload gốc — không bao giờ bị sửa sau khi insert.
-- Cập nhật `current_balance` của tài khoản sau mỗi giao dịch mới (atomic transaction).
+- Chuẩn hóa giao dịch từ bank connector và tránh tạo bản ghi trùng theo mã tham chiếu nếu nguồn ngân hàng cung cấp.
+- Giữ nguyên nội dung và dữ liệu gốc nhận từ ngân hàng; phân loại/ghi chú do người dùng sửa phải lưu riêng.
+- Cập nhật số dư tài khoản nhất quán sau mỗi giao dịch mới.
 
 ## Yêu cầu kiểm thử (Testing)
 
@@ -109,23 +86,14 @@ CREATE TABLE webhook_events (
 - `accountId` không thuộc user → lỗi 403.
 - Thiếu field bắt buộc → lỗi 400 với thông báo tiếng Việt.
 
-**3. Duplicate webhook (integration tests)**
-- Gửi cùng payload webhook 2 lần → chỉ tạo 1 giao dịch.
-- Giao dịch thứ 2 bị bỏ qua, không crash, trả HTTP 200.
-
-**4. Account deletion (integration tests)**
+**3. Account deletion (integration tests)**
 - Xóa tài khoản (soft delete) → giao dịch giữ nguyên, `deletedAt` được set.
 - Query tổng quan không tính tài khoản đã xóa vào `currentBalance`.
 - Query lịch sử vẫn hiển thị giao dịch của tài khoản đã xóa (với label "Tài khoản đã xóa").
 
-**5. SePay webhook signature (unit tests)**
-- Chữ ký hợp lệ → xử lý thành công.
-- Chữ ký sai → trả 401, không xử lý payload.
-- Thiếu header chữ ký → trả 401.
-
 ### Quy tắc viết test
 
-- **MUST** dùng test fixtures (không gọi external API trong unit test); mock SePay client.
+- **MUST** dùng test fixtures; không gọi external API trong unit test.
 - Tên test phải mô tả hành vi: `"should not count deleted account balance in total"`.
 - Coverage tối thiểu cho `services/` và `utils/`: 80% line coverage.
 - **DO NOT** viết test chỉ kiểm tra implementation detail; test hành vi (behavior).

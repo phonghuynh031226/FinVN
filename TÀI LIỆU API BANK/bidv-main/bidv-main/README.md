@@ -1,1 +1,0 @@
-# BIDV adapter php

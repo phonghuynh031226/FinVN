@@ -9,18 +9,16 @@ import { SyncBankModal } from './components/accounts/SyncBankModal';
 import { TransactionList } from './components/transactions/TransactionList';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { TransactionDetailModal } from './components/transactions/TransactionDetailModal';
-import { SepaySimulatorModal } from './components/sepay/SepaySimulatorModal';
-import { SettingsView } from './components/settings/SettingsView';
 import { ToastContainer, ToastMessage } from './components/common/Toast';
 
-import { BankAccount, CreateBankAccountInput, UpdateBankAccountInput } from './types/bankAccount';
+import { BankAccount, CreateBankAccountInput, UpdateBankAccountInput, getBankProvider } from './types/bankAccount';
 import { Transaction, CreateTransactionInput, FinancialSummary } from './types/transaction';
 import { TransactionFilter } from './types/filter';
 import { getDateRangeByPreset } from './utils/date';
-import { dataService, SepayWebhookPayload } from './services/dataService';
+import { dataService } from './services/dataService';
 import { storageService } from './services/storage';
 import { bankApiService } from './services/bankApi';
-import { Plus, CreditCard, Zap, RefreshCw } from 'lucide-react';
+import { Plus, CreditCard, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -51,7 +49,6 @@ export default function App() {
   const [isAccountModalOpen, setAccountModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [isSepayModalOpen, setSepayModalOpen] = useState(false);
 
   // Toast Notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -91,86 +88,112 @@ export default function App() {
 
   // Ref để đảm bảo auto-sync chỉ chạy đúng 1 lần khi load app, chống loop render
   const hasAutoSyncedRef = useRef(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
 
-  // Auto Sync on load với cơ chế Cooldown 15 phút bảo vệ tài khoản
-  const autoSyncAccounts = useCallback(async () => {
+  // Auto Sync: force = true để bỏ qua cooldown, silent = true để không hiện popup toast khởi động
+  const autoSyncAccounts = useCallback(async (force = false, silent = false) => {
     try {
+      if (force && !silent) {
+        setIsSyncingAll(true);
+      }
       const accs = await dataService.getAccounts();
       const credsMap = storageService.getBankCredentials();
       const now = Date.now();
-      const COOLDOWN_MS = 15 * 60 * 1000; // 15 phút an toàn tuyệt đối tránh quét
+      const COOLDOWN_MS = 15 * 60 * 1000; // 15 phút an toàn
 
       let anyUpdated = false;
+      let totalImportedCount = 0;
 
-      for (const acc of accs) {
-        const creds = credsMap[acc.id];
-        if (!creds?.username || !creds?.password) continue;
+      await Promise.allSettled(
+        accs.map(async (acc) => {
+          const creds = credsMap[acc.id];
+          if (!creds?.username || !creds?.password) return;
 
-        // Kiểm tra xem đã qua 15 phút kể từ lần đồng bộ trước chưa
-        const lastSync = acc.lastSyncedAt || 0;
-        if (now - lastSync < COOLDOWN_MS) {
-          // Chưa đủ 15 phút, bỏ qua để bảo vệ tài khoản ngân hàng không bị quét
-          continue;
-        }
+          // Bỏ qua nếu chưa đủ thời gian cooldown (trừ khi force = true)
+          const lastSync = acc.lastSyncedAt || 0;
+          if (!force && now - lastSync < COOLDOWN_MS) {
+            return;
+          }
 
-        const isVCB = acc.bankName.includes('Vietcombank') || acc.bankName === 'VCB';
-        const provider = isVCB ? 'VCB' : 'MB';
+          const provider = getBankProvider(acc.bankName);
 
-        try {
-          // 1. Lấy số dư mới nhất
-          const conn = await bankApiService.connect({
-            provider,
-            username: creds.username,
-            password: creds.password,
-            accountNumber: acc.accountNumber,
-            browserId: creds.browserId,
-          });
+          try {
+            if (!silent) {
+              addToast('info', `Đang tự động đồng bộ ${acc.bankName}...`);
+            }
 
-          // 2. Tải 30 ngày giao dịch
-          const today = new Date();
-          const from = new Date(today);
-          from.setDate(today.getDate() - 30);
-          const formatDate = (d: Date) => d.toISOString().slice(0, 10);
-
-          const bankTxs = await bankApiService.getTransactions(
-            {
+            // 1. Lấy số dư mới nhất
+            const conn = await bankApiService.connect({
               provider,
               username: creds.username,
               password: creds.password,
-              accountNumber: conn.accountNumber || acc.accountNumber,
+              accountNumber: acc.accountNumber,
               browserId: creds.browserId,
-            },
-            formatDate(from),
-            formatDate(today)
-          );
+            });
 
-          // 3. Nhập vào cơ sở dữ liệu
-          const importRes = await dataService.importBankTransactions(
-            acc.id,
-            bankTxs,
-            conn.currentBalance
-          );
+            const activeBrowserId = conn.browserId || creds.browserId;
 
-          // 4. Cập nhật lastSyncedAt
-          await dataService.updateAccount(acc.id, {
-            currentBalance: conn.currentBalance,
-            lastSyncedAt: now,
-          });
+            // 2. Tải 30 ngày giao dịch
+            const today = new Date();
+            const from = new Date(today);
+            from.setDate(today.getDate() - 30);
+            const formatDate = (d: Date) => d.toISOString().slice(0, 10);
 
-          anyUpdated = true;
-          if (importRes.importedCount > 0) {
-            addToast('info', `⚡ Tự động nạp ${importRes.importedCount} giao dịch mới từ ${acc.bankName}!`);
+            const bankTxs = await bankApiService.getTransactions(
+              {
+                provider,
+                username: creds.username,
+                password: creds.password,
+                accountNumber: conn.accountNumber || acc.accountNumber,
+                browserId: activeBrowserId,
+              },
+              formatDate(from),
+              formatDate(today)
+            );
+
+            // 3. Nhập vào cơ sở dữ liệu
+            const importRes = await dataService.importBankTransactions(
+              acc.id,
+              bankTxs,
+              conn.currentBalance
+            );
+
+            // 4. Lưu lại browserId mới (nếu có) và cập nhật lastSyncedAt
+            storageService.saveAccountCredential(acc.id, {
+              username: creds.username,
+              password: creds.password,
+              browserId: activeBrowserId,
+            });
+
+            await dataService.updateAccount(acc.id, {
+              currentBalance: conn.currentBalance,
+              lastSyncedAt: now,
+            });
+
+            anyUpdated = true;
+            totalImportedCount += importRes.importedCount;
+            if (importRes.importedCount > 0) {
+              addToast('info', `⚡ Tự động nạp ${importRes.importedCount} giao dịch mới từ ${acc.bankName}!`);
+            }
+          } catch (err: any) {
+            console.warn(`Tự động đồng bộ ${acc.bankName} tạm hoãn:`, err.message);
+            if (!silent) {
+              addToast('error', `Lỗi đồng bộ ${acc.bankName}: ${err.message}`);
+            }
           }
-        } catch (err: any) {
-          console.warn(`Tự động đồng bộ ${acc.bankName} tạm hoãn:`, err.message);
-        }
-      }
+        })
+      );
 
       if (anyUpdated) {
         await refreshData();
       }
+      if (!silent && anyUpdated) {
+        addToast('success', `⚡ Đã hoàn tất đồng bộ tự động tất cả tài khoản ngân hàng!`);
+      }
     } catch (e) {
       console.error('Lỗi khi chạy auto-sync:', e);
+    } finally {
+      setIsSyncingAll(false);
     }
   }, [addToast, refreshData]);
 
@@ -179,20 +202,29 @@ export default function App() {
     refreshData();
   }, [refreshData]);
 
-  // 2. Tự động đồng bộ ngầm đúng 1 lần duy nhất khi người dùng mở Web
+  // 2. Tự động đồng bộ ngay khi vừa mở ứng dụng + thiết lập chu kỳ cập nhật định kỳ mỗi 30 phút
   useEffect(() => {
-    if (hasAutoSyncedRef.current) return;
-    hasAutoSyncedRef.current = true;
-    autoSyncAccounts();
+    // Luôn chạy cập nhật ngay lập tức khi người dùng mở Web
+    if (!hasAutoSyncedRef.current) {
+      hasAutoSyncedRef.current = true;
+      autoSyncAccounts(true, false);
+    }
+
+    // Thiết lập chu kỳ tự động cập nhật ngầm định kỳ mỗi 30 phút (30 * 60 * 1000 ms)
+    const intervalId = setInterval(() => {
+      console.log('⏰ [Auto-Sync 30m] Tự động cập nhật số dư & giao dịch định kỳ 30 phút...');
+      autoSyncAccounts(true, true);
+    }, 30 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
   }, [autoSyncAccounts]);
 
   // Account Handlers
   const handleCreateAccount = async (
     input: CreateBankAccountInput,
-    credentials?: { username: string; password: string }
+    credentials?: { username: string; password: string; browserId?: string }
   ) => {
-    const isVCB = input.bankName.includes('Vietcombank') || input.bankName === 'VCB';
-    const provider = isVCB ? 'VCB' : 'MB';
+    const provider = getBankProvider(input.bankName);
 
     const newAcc = await dataService.createAccount({
       ...input,
@@ -204,6 +236,7 @@ export default function App() {
       storageService.saveAccountCredential(newAcc.id, {
         username: credentials.username,
         password: credentials.password,
+        browserId: credentials.browserId,
       });
     }
 
@@ -226,6 +259,7 @@ export default function App() {
             username: credentials.username,
             password: credentials.password,
             accountNumber: input.accountNumber,
+            browserId: credentials.browserId,
           },
           formatDate(from),
           formatDate(today)
@@ -243,7 +277,7 @@ export default function App() {
     await refreshData();
   };
 
-  const handleOpenSync = () => {
+  const handleOpenSync = async () => {
     if (accounts.length === 0) {
       addToast('info', 'Vui lòng kết nối tài khoản ngân hàng trước khi đồng bộ.');
       setEditingAccount(null);
@@ -254,6 +288,14 @@ export default function App() {
       filter.accountId !== 'ALL'
         ? accounts.find((a) => a.id === filter.accountId) || accounts[0]
         : accounts[0];
+
+    const creds = storageService.getBankCredentials()[target.id];
+    if (creds?.username && creds?.password) {
+      addToast('info', `Đang tải giao dịch mới nhất từ ${target.bankName}...`);
+      await autoSyncAccounts(true, false);
+      return;
+    }
+
     setSyncAccount(target);
   };
 
@@ -297,13 +339,6 @@ export default function App() {
     await refreshData();
   };
 
-  // SePay Simulator Handler
-  const handleSimulateSepay = async (payload: SepayWebhookPayload) => {
-    await dataService.simulateSepayWebhook(payload);
-    addToast('success', `⚡ Nhận webhook SePay thành công! Giao dịch đã được đồng bộ tự động.`);
-    await refreshData();
-  };
-
   // Export CSV
   const handleExportCSV = async () => {
     const allTxs = await dataService.getTransactions(filter);
@@ -327,17 +362,7 @@ export default function App() {
       case 'accounts':
         return {
           title: 'Tài khoản ngân hàng',
-          subtitle: 'Quản lý các tài khoản liên kết và theo dõi trạng thái SePay Webhook',
-        };
-      case 'sepay':
-        return {
-          title: 'Tích hợp & Mô phỏng SePay',
-          subtitle: 'Kiểm thử nhận giao dịch chuyển khoản ngân hàng tự động qua Webhook',
-        };
-      case 'settings':
-        return {
-          title: 'Cài đặt & Hướng dẫn',
-          subtitle: 'Cấu hình hệ thống, cam kết bảo mật và hướng dẫn kết nối ngân hàng',
+          subtitle: 'Quản lý các tài khoản ngân hàng đã liên kết',
         };
     }
   };
@@ -368,7 +393,8 @@ export default function App() {
             setEditingAccount(null);
             setAccountModalOpen(true);
           }}
-          onOpenSepaySimulator={() => setSepayModalOpen(true)}
+          onSyncAll={() => autoSyncAccounts(true)}
+          isSyncing={isSyncingAll}
           accounts={accounts}
           filter={filter}
           onFilterChange={setFilter}
@@ -383,7 +409,14 @@ export default function App() {
               <StatCards
                 summary={summary}
                 dateRangeLabel={filter.dateRange.label}
-                accountCount={accounts.length}
+                accountCount={
+                  filter.accountId === 'ALL'
+                    ? accounts.length
+                    : accounts.some((account) => account.id === filter.accountId)
+                      ? 1
+                      : 0
+                }
+                isAggregated={filter.accountId === 'ALL'}
               />
 
               {/* Row: Dòng tiền theo thời gian & Giao dịch gần đây */}
@@ -392,13 +425,17 @@ export default function App() {
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
                   gap: '20px',
-                  marginBottom: '16px',
+                  marginBottom: '8px',
                   alignItems: 'stretch',
                 }}
               >
-                <CashflowChart transactions={transactions} />
+                <CashflowChart
+                  transactions={transactions}
+                  startDate={filter.dateRange?.startDate}
+                  endDate={filter.dateRange?.endDate}
+                />
                 <TransactionList
-                  transactions={transactions.slice(0, 6)}
+                  transactions={transactions.slice(0, 4)}
                   filter={filter}
                   onFilterChange={setFilter}
                   onSelectTransaction={setSelectedTx}
@@ -484,7 +521,7 @@ export default function App() {
                   </div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Chưa có tài khoản ngân hàng nào</h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '420px' }}>
-                    Hãy thêm tài khoản ngân hàng của bạn (Vietcombank, Techcombank, MB, ACB...) để bắt đầu quản lý số dư và theo dõi giao dịch.
+                    Hãy thêm tài khoản ngân hàng của bạn (BIDV, Vietcombank, MB...) để bắt đầu quản lý số dư và theo dõi giao dịch.
                   </p>
                   <button
                     onClick={() => {
@@ -515,7 +552,6 @@ export default function App() {
                       }}
                       onDelete={handleDeleteAccount}
                       onQuickUpdate={handleUpdateAccount}
-                      onSync={(a) => setSyncAccount(a)}
                     />
                   ))}
                 </div>
@@ -523,58 +559,7 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 4: SEPAY SIMULATOR TAB */}
-          {currentTab === 'sepay' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div className="glass-card" style={{ padding: '28px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                  <div
-                    style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#ffffff',
-                    }}
-                  >
-                    <Zap size={22} />
-                  </div>
-                  <div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Trung tâm Kiểm thử SePay Webhook</h2>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                      Mô phỏng tức thì biến động số dư chuyển khoản đến hoặc đi để kiểm tra tính năng đồng bộ tự động.
-                    </p>
-                  </div>
-                </div>
-
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                  Khi bạn bấm nút dưới đây, hệ thống sẽ mô phỏng một webhook payload chuẩn từ SePay, tự động kiểm tra tính duy nhất (Idempotent), khớp số tài khoản ngân hàng và cập nhật số dư ngay lập tức trên dashboard.
-                </p>
-
-                <button onClick={() => setSepayModalOpen(true)} className="btn btn-primary btn-lg">
-                  <Zap size={18} /> Mở bảng điều khiển Mô phỏng Webhook
-                </button>
-              </div>
-
-              {/* Webhook transaction ledger */}
-              <TransactionList
-                transactions={transactions.filter((t) => t.source === 'SEPAY')}
-                filter={filter}
-                onFilterChange={setFilter}
-                onSelectTransaction={setSelectedTx}
-                onOpenAddModal={() => setAddTxModalOpen(true)}
-                onExportCSV={handleExportCSV}
-                title="Lịch sử các giao dịch đồng bộ qua SePay"
-                isCompact={true}
-              />
-            </div>
-          )}
-
           {/* TAB: SETTINGS */}
-          {currentTab === 'settings' && <SettingsView onResetData={refreshData} />}
         </main>
       </div>
 
@@ -608,14 +593,6 @@ export default function App() {
         onClose={() => setSelectedTx(null)}
         onUpdate={handleUpdateTransaction}
         onDelete={handleDeleteTransaction}
-      />
-
-      {/* 4. SePay Simulator Modal */}
-      <SepaySimulatorModal
-        isOpen={isSepayModalOpen}
-        onClose={() => setSepayModalOpen(false)}
-        onSimulate={handleSimulateSepay}
-        accounts={accounts}
       />
 
       {/* 5. Sync Bank Modal */}

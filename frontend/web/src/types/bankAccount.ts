@@ -1,6 +1,11 @@
-export type SePayStatus = 'NOT_CONNECTED' | 'PENDING' | 'CONNECTED' | 'ERROR';
-
 export type BankProvider = 'MB' | 'VCB' | 'BIDV';
+
+export function getBankProvider(bankName: string): BankProvider {
+  const normalized = (bankName || '').toUpperCase();
+  if (normalized.includes('VIETCOMBANK') || normalized === 'VCB') return 'VCB';
+  if (normalized.includes('BIDV')) return 'BIDV';
+  return 'MB';
+}
 
 export type BankConnectionMode = 'MANUAL' | 'API';
 
@@ -34,8 +39,6 @@ export interface BankAccount {
   initialBalance: number;
   currentBalance: number;
   color?: string;
-  sepayStatus: SePayStatus;
-  sepayRef?: string | null;
   deletedAt?: string | null;
   lastSyncedAt?: number | null;
   createdAt: string;

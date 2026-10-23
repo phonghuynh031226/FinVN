@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { DateRange, DateRangePreset } from '../types/filter';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isSameOrBefore);
 
 export const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
@@ -30,7 +32,7 @@ export function getDateRangeByPreset(
       };
     }
     case 'LAST_7_DAYS': {
-      const start = now.subtract(6, 'day').format('YYYY-MM-DD');
+      const start = now.subtract(7, 'day').format('YYYY-MM-DD');
       const end = now.format('YYYY-MM-DD');
       return {
         preset,
@@ -40,7 +42,8 @@ export function getDateRangeByPreset(
       };
     }
     case 'LAST_30_DAYS': {
-      const start = now.subtract(29, 'day').format('YYYY-MM-DD');
+      // 30 ngày qua: Tính từ ngày hiện tại lui về 30 ngày (ví dụ: 23/09/2026 - 23/10/2026)
+      const start = now.subtract(30, 'day').format('YYYY-MM-DD');
       const end = now.format('YYYY-MM-DD');
       return {
         preset,
@@ -50,8 +53,9 @@ export function getDateRangeByPreset(
       };
     }
     case 'THIS_MONTH': {
+      // Tháng này: Tính từ ngày 1 của tháng đến ngày hiện tại (ví dụ: 01/10/2026 - 23/10/2026)
       const start = now.startOf('month').format('YYYY-MM-DD');
-      const end = now.endOf('month').format('YYYY-MM-DD');
+      const end = now.format('YYYY-MM-DD');
       return {
         preset,
         startDate: start,
@@ -97,4 +101,9 @@ export function formatDisplayDate(isoString: string): string {
 export function formatDisplayTime(isoString: string): string {
   if (!isoString) return '';
   return dayjs(isoString).tz(VIETNAM_TIMEZONE).format('HH:mm');
+}
+
+export function getLocalDateString(isoString: string): string {
+  if (!isoString) return '';
+  return dayjs(isoString).tz(VIETNAM_TIMEZONE).format('YYYY-MM-DD');
 }

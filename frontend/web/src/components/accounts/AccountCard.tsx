@@ -4,14 +4,13 @@ import { getBankInfo } from '../../constants/vietnamBanks';
 import { maskAccountNumber } from '../../utils/currency';
 import { formatDisplayDate } from '../../utils/date';
 import { BankLogo } from './BankLogo';
-import { Edit3, Trash2, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Edit3, Trash2, Eye, EyeOff } from 'lucide-react';
 
 interface AccountCardProps {
   account: BankAccount;
   onEdit: (account: BankAccount) => void;
   onDelete: (account: BankAccount) => void;
   onQuickUpdate?: (id: string, updates: UpdateBankAccountInput) => Promise<void>;
-  onSync?: (account: BankAccount) => void;
 }
 
 export const AccountCard: React.FC<AccountCardProps> = ({
@@ -19,7 +18,6 @@ export const AccountCard: React.FC<AccountCardProps> = ({
   onEdit,
   onDelete,
   onQuickUpdate,
-  onSync,
 }) => {
   const bankInfo = getBankInfo(account.bankName);
   const [isHovered, setIsHovered] = useState(false);
@@ -229,31 +227,6 @@ export const AccountCard: React.FC<AccountCardProps> = ({
 
         {/* Nút hành động */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {onSync && (
-            <button
-              onClick={() => onSync(account)}
-              title="Đồng bộ số dư & giao dịch từ ngân hàng"
-              style={{
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: 'rgba(99, 102, 241, 0.45)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(99, 102, 241, 0.7)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(99, 102, 241, 0.45)')}
-            >
-              <RefreshCw size={13} />
-              <span>Đồng bộ</span>
-            </button>
-          )}
           <button
           onClick={() => onEdit(account)}
           title="Chỉnh sửa thông tin & đổi màu thẻ"

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
 import re
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
+import time as pytime
 import mbbank
 
 from ..main import AccountSnapshot, ConnectRequest, NormalizedTransaction, TransactionRequest
+
+logger = logging.getLogger("mb_adapter")
 
 
 class MBAdapter:
@@ -76,20 +80,19 @@ class MBAdapter:
             snapshot = self.connect(request)
             account_no = snapshot.account_number
 
-        from datetime import timedelta
-        import time as pytime
-
         # Giới hạn tối đa 365 ngày (1 năm từ quá khứ đến hiện tại theo quy định MB Bank)
         max_past = date.today() - timedelta(days=365)
         effective_from = request.from_date if request.from_date >= max_past else max_past
 
-        # Chia nhỏ khoảng ngày thành các đợt tối đa 30 ngày
+        # Chia nhỏ khoảng ngày thành các đợt tối đa 5 ngày để không bao giờ bị MBBank giới hạn 30 giao dịch/lần gọi
         chunks = []
         cur = effective_from
         while cur <= request.to_date:
-            nxt = min(cur + timedelta(days=30), request.to_date)
+            nxt = min(cur + timedelta(days=5), request.to_date)
             chunks.append((cur, nxt))
             cur = nxt + timedelta(days=1)
+
+        logger.info(f"[MBBank] Bat dau tra cuu tai khoan {account_no} tu {effective_from} den {request.to_date} ({len(chunks)} dot)...")
 
         results: list[NormalizedTransaction] = []
         seen_refs = set()
@@ -105,6 +108,7 @@ class MBAdapter:
                     to_date=end_dt,
                 )
                 tx_list = history_resp.transactionHistoryList or []
+                logger.info(f"[MBBank] Dot {idx + 1}/{len(chunks)} ({c_from} -> {c_to}): lay duoc {len(tx_list)} giao dich")
 
                 for tx in tx_list:
                     ref_key = str(tx.refNo or tx.docId or "").strip()
@@ -134,9 +138,10 @@ class MBAdapter:
                         )
                     )
             except Exception as exc:
-                logger.warning(f"Lỗi khi tải lịch sử MB Bank đợt {c_from} - {c_to}: {exc}")
+                logger.warning(f"[MBBank] Loi dot {c_from} -> {c_to}: {exc}")
 
             if idx < len(chunks) - 1:
                 pytime.sleep(0.3)  # Nghỉ nhẹ giữa các đợt
 
+        logger.info(f"[MBBank] Hoan tat! Tong cong {len(results)} giao dich duy nhat.")
         return results

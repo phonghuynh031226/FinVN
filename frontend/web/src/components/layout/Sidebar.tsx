@@ -4,7 +4,6 @@ import {
   CreditCard,
   Zap,
   PieChart,
-  Settings,
   Sun,
   Moon,
   ShieldCheck,
@@ -13,7 +12,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 
-export type TabKey = 'dashboard' | 'transactions' | 'accounts' | 'sepay' | 'settings';
+export type TabKey = 'dashboard' | 'transactions' | 'accounts';
 
 interface SidebarProps {
   currentTab: TabKey;
@@ -39,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
 }) => {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const [isHoveringBorder, setIsHoveringBorder] = useState(false);
+  const [isHoverBtn, setIsHoverBtn] = useState(false);
 
   const isCollapsed = propCollapsed !== undefined ? propCollapsed : internalCollapsed;
 
@@ -52,7 +51,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { key: 'dashboard' as TabKey, label: 'Báo cáo phân tích', icon: PieChart },
     { key: 'transactions' as TabKey, label: 'Sổ giao dịch', icon: Receipt },
     { key: 'accounts' as TabKey, label: 'Tài khoản ngân hàng', icon: CreditCard },
-    { key: 'settings' as TabKey, label: 'Cài đặt & Hướng dẫn', icon: Settings },
   ];
 
   return (
@@ -80,66 +78,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
           display: 'flex',
           flexDirection: 'column',
           zIndex: 50,
-          borderRight: isHoveringBorder ? '2px solid #818cf8' : '1px solid var(--border-subtle)',
+          borderRight: '1px solid var(--border-subtle)',
           padding: isCollapsed ? '24px 10px' : '24px 16px',
-          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease, border-color 0.2s',
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease',
           transform: isMobileOpen ? 'translateX(0)' : undefined,
           boxSizing: 'border-box',
         }}
       >
-        {/* NÚT THU GỌN / ĐÓNG TẠI VIỀN PHẢI (KHI DI CHUỘT VÔ VIỀN BÊN PHẢI) */}
-        <div
-          title={isCollapsed ? 'Bấm để mở rộng menu' : 'Di chuột hoặc bấm để đóng menu'}
-          onMouseEnter={() => {
-            setIsHoveringBorder(true);
-            // Tự động đóng lại khi di chuột vào viền bên phải
-            if (!isCollapsed) {
-              toggleCollapse();
-            }
-          }}
-          onMouseLeave={() => setIsHoveringBorder(false)}
+        {/* NÚT THU GỌN / MỞ RỘNG MENU (CHỈ KHI NGƯỜI DÙNG BẤM CLICK CHUỘT) */}
+        <button
+          type="button"
+          aria-label={isCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+          title={isCollapsed ? 'Bấm để mở rộng menu' : 'Bấm để thu gọn menu'}
           onClick={toggleCollapse}
+          onMouseEnter={() => setIsHoverBtn(true)}
+          onMouseLeave={() => setIsHoverBtn(false)}
           style={{
             position: 'absolute',
-            top: 0,
-            bottom: 0,
-            right: '-10px',
-            width: '20px',
-            cursor: 'pointer',
-            zIndex: 60,
+            top: '28px',
+            right: '-13px',
+            width: '26px',
+            height: '26px',
+            borderRadius: '50%',
+            background: 'var(--bg-secondary)',
+            border: isHoverBtn ? '1px solid var(--accent-primary)' : '1px solid var(--border-hover)',
+            color: isHoverBtn ? 'var(--accent-primary)' : 'var(--text-secondary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            boxShadow: 'var(--shadow-md)',
+            cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: isHoverBtn ? 'scale(1.15)' : 'scale(1)',
+            zIndex: 60,
           }}
         >
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleCollapse();
-            }}
-            style={{
-              width: '26px',
-              height: '26px',
-              borderRadius: '50%',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-hover)',
-              color: '#818cf8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              position: 'absolute',
-              top: '32px',
-              right: '-3px',
-              transform: isHoveringBorder ? 'scale(1.15)' : 'scale(1)',
-            }}
-          >
-            {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-          </button>
-        </div>
+          {isCollapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
 
         {/* Logo Brand */}
         <div
@@ -188,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                Quản Lý Tài Chính & SePay
+                Quản Lý Tài Chính
               </div>
             </div>
           )}
