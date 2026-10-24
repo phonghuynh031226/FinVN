@@ -169,6 +169,24 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "bank-gateway"}
 
 
+@app.get("/health/db")
+def health_db():
+    try:
+        from . import db
+        p = db.get_connection_pool()
+        conn = p.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1;")
+                val = cur.fetchone()[0]
+            return {"status": "ok", "db": "connected", "result": val}
+        finally:
+            p.putconn(conn)
+    except Exception as e:
+        import traceback
+        return {"status": "error", "error": str(e), "trace": traceback.format_exc()}
+
+
 @app.post("/api/banks/{bank}/transactions", response_model=list[NormalizedTransaction])
 def transactions(bank: BankCode, request: TransactionRequest, current_user: AuthenticatedUser = Depends(require_current_user), _: None = Depends(require_csrf)) -> list[NormalizedTransaction]:
     if request.to_date < request.from_date:
