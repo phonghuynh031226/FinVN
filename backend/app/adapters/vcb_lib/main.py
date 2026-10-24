@@ -300,7 +300,7 @@ class VCB:
                 server_pub_key_base64=LOCAL["publicKey"]
             ), 
             headers = self._post_headers(),
-            timeout = 10,
+            timeout = 30,
         )
         try:
             response = res_raw.json()

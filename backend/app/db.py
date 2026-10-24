@@ -36,48 +36,33 @@ _pool: Optional[pool.SimpleConnectionPool] = None
 
 def _parse_db_url(url: str) -> dict:
     import re
+    import urllib.parse
     url = url.strip()
     if url.startswith("postgres://"):
         url = "postgresql://" + url[len("postgres://"):]
     # Gỡ bỏ dấu ngoặc vuông nếu người dùng lỡ giữ nguyên mẫu [PASSWORD]
     url = re.sub(r':\[([^\]]*)\]@', r':\1@', url)
 
-    prefix = "postgresql://"
-    if not url.startswith(prefix) or "@" not in url:
+    try:
+        p = urllib.parse.urlsplit(url)
+        if not p.hostname:
+            return {}
+        user = urllib.parse.unquote(p.username or "")
+        password = urllib.parse.unquote(p.password or "")
+        host = p.hostname
+        port = p.port or 5432
+        path = p.path[1:] if p.path.startswith("/") else p.path
+        dbname = path.split("?")[0] if path else "postgres"
+        return {
+            "user": user.strip(),
+            "password": password.strip(),
+            "host": host.strip(),
+            "port": port,
+            "dbname": dbname.strip() or "postgres",
+            "sslmode": "require",
+        }
+    except Exception:
         return {}
-    rest = url[len(prefix):]
-    user_pass, host_rest = rest.rsplit("@", 1)
-
-    if ":" in user_pass:
-        user, password = user_pass.split(":", 1)
-    else:
-        user, password = user_pass, ""
-
-    path = ""
-    if "/" in host_rest:
-        host_port, path = host_rest.split("/", 1)
-    else:
-        host_port = host_rest
-
-    dbname = path.split("?")[0] if path else "postgres"
-    if not dbname:
-        dbname = "postgres"
-
-    if ":" in host_port:
-        host, port_str = host_port.split(":", 1)
-        port = int(port_str)
-    else:
-        host = host_port
-        port = 5432
-
-    return {
-        "user": user.strip(),
-        "password": password.strip(),
-        "host": host.strip(),
-        "port": port,
-        "dbname": dbname.strip(),
-        "sslmode": "require",
-    }
 
 
 def get_connection_pool() -> pool.SimpleConnectionPool:

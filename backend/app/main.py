@@ -32,6 +32,7 @@ class ConnectRequest(BaseModel):
     password: str = Field(min_length=1)
     browser_id: str | None = None
     account_number: str | None = None
+    client_id: str | None = None
 
 
 class AccountSnapshot(BaseModel):
@@ -44,6 +45,7 @@ class AccountSnapshot(BaseModel):
     accountHolderName: str | None = None
     browser_id: str | None = None
     browserId: str | None = None
+    client_id: str | None = None
 
 
 class TransactionRequest(ConnectRequest):
@@ -215,6 +217,7 @@ class SyncBankRequest(BaseModel):
     password: str
     account_number: str | None = None
     browser_id: str | None = None
+    client_id: str | None = None
     bank_name: str
     display_name: str
     color: str | None = "#10b981"
@@ -255,6 +258,32 @@ class ManualTransactionInput(BaseModel):
     transaction_date: str
 
 
+def _enrich_request_with_saved_creds(user_id: str, bank: str, req: ConnectRequest | SyncBankRequest) -> None:
+    if getattr(req, "browser_id", None) and getattr(req, "client_id", None):
+        return
+    acc = None
+    acct_no = getattr(req, "account_number", None)
+    if acct_no:
+        acc = db.get_account_by_number(acct_no, user_id)
+    if not acc:
+        bank_aliases = {"mbbank": "mb", "mb bank": "mb", "vietcombank": "vcb", "vcb": "vcb", "bidv": "bidv"}
+        for user_acc in db.get_accounts(user_id):
+            if bank_aliases.get(user_acc.get("bank_name", "").strip().lower()) == bank:
+                acc = user_acc
+                break
+    if acc:
+        saved_cred = db.get_bank_credential(user_id, acc["id"])
+        if saved_cred:
+            try:
+                dec = decrypt_bank_credentials(user_id, acc["id"], saved_cred["key_id"], saved_cred["nonce"], saved_cred["ciphertext"], saved_cred["tag"])
+                if not getattr(req, "browser_id", None) and dec.get("browser_id"):
+                    req.browser_id = dec.get("browser_id")
+                if not getattr(req, "client_id", None) and dec.get("client_id"):
+                    req.client_id = dec.get("client_id")
+            except Exception:
+                pass
+
+
 @app.post("/api/banks/{bank}/sync")
 def sync_bank(bank: BankCode, req: SyncBankRequest, current_user: AuthenticatedUser = Depends(require_current_user), _: None = Depends(require_csrf)):
     """
@@ -266,16 +295,20 @@ def sync_bank(bank: BankCode, req: SyncBankRequest, current_user: AuthenticatedU
        - Nếu chưa có hoặc force_full = True: Lấy 30-90 ngày.
     4. Lưu vào PostgreSQL với cơ chế chống trùng lặp tuyệt đối.
     """
+    _enrich_request_with_saved_creds(current_user.id, bank, req)
+
     # Bước 1: Kết nối lấy số dư mới nhất
     conn_req = ConnectRequest(
         username=req.username,
         password=req.password,
         browser_id=req.browser_id,
+        client_id=req.client_id,
         account_number=req.account_number,
     )
     snapshot = adapters[bank].connect(conn_req)
     active_acct_num = snapshot.account_number or req.account_number
     active_browser_id = getattr(snapshot, "browser_id", None) or req.browser_id
+    active_client_id = getattr(snapshot, "client_id", None) or req.client_id
 
     # Bước 2: Lưu tài khoản vào PostgreSQL
     account = db.upsert_account(
@@ -289,6 +322,7 @@ def sync_bank(bank: BankCode, req: SyncBankRequest, current_user: AuthenticatedU
     )
     db.save_bank_credential(current_user.id, account["id"], encrypt_bank_credentials(current_user.id, account["id"], {
         "username": req.username, "password": req.password, "browser_id": active_browser_id,
+        "client_id": active_client_id,
         "account_number": active_acct_num,
     }))
 
@@ -311,6 +345,7 @@ def sync_bank(bank: BankCode, req: SyncBankRequest, current_user: AuthenticatedU
         username=req.username,
         password=req.password,
         browser_id=active_browser_id,
+        client_id=active_client_id,
         account_number=active_acct_num,
         from_date=from_date,
         to_date=today,
@@ -334,6 +369,7 @@ def sync_bank(bank: BankCode, req: SyncBankRequest, current_user: AuthenticatedU
         "new_inserted_count": inserted_count,
         "current_balance": snapshot.current_balance,
         "browser_id": active_browser_id,
+        "client_id": active_client_id,
     }
 
 
@@ -353,7 +389,7 @@ def sync_saved_account(account_id: str, current_user: AuthenticatedUser = Depend
     if not bank:
         raise HTTPException(status_code=400, detail="Ngân hàng này chưa hỗ trợ đồng bộ.")
     payload = SyncBankRequest(username=credential["username"], password=credential["password"],
-        browser_id=credential.get("browser_id"), account_number=account["account_number"],
+        browser_id=credential.get("browser_id"), client_id=credential.get("client_id"), account_number=account["account_number"],
         bank_name=account["bank_name"], display_name=account["display_name"], color=account["color"])
     return sync_bank(bank, payload, current_user, None)
 
@@ -528,6 +564,7 @@ from .exceptions import VCBNeedOtpException, BIDVNeedConfirmAppException
 
 @app.post("/api/banks/{bank}/connect")
 def connect(bank: BankCode, request: ConnectRequest, current_user: AuthenticatedUser = Depends(require_current_user), _: None = Depends(require_csrf)):
+    _enrich_request_with_saved_creds(current_user.id, bank, request)
     try:
         return adapters[bank].connect(request)
     except VCBNeedOtpException as otp_err:
@@ -593,8 +630,10 @@ def auth_google(req: GoogleAuthRequest, response: Response):
         payload = verify_google_credential(token)
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=401, detail="Xác thực Google ID Token thất bại.")
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=401, detail=f"Xác thực Google ID Token thất bại: {exc}")
 
     sub = payload.get("sub")
     email = payload["email"]

@@ -97,7 +97,7 @@ export const storageService = {
     }
   },
 
-  getBankCredentials(): Record<string, { username: string; password?: string; browserId?: string }> {
+  getBankCredentials(): Record<string, { username: string; password?: string; browserId?: string; clientId?: string }> {
     try {
       localStorage.removeItem('finvn_bank_creds');
       return {};
@@ -106,12 +106,12 @@ export const storageService = {
     }
   },
 
-  saveBankCredentials(creds: Record<string, { username: string; password?: string; browserId?: string }>): void {
+  saveBankCredentials(creds: Record<string, { username: string; password?: string; browserId?: string; clientId?: string }>): void {
     void creds;
     localStorage.removeItem('finvn_bank_creds');
   },
 
-  saveAccountCredential(accountId: string, cred: { username: string; password?: string; browserId?: string }): void {
+  saveAccountCredential(accountId: string, cred: { username: string; password?: string; browserId?: string; clientId?: string }): void {
     const all = this.getBankCredentials();
     all[accountId] = cred;
     this.saveBankCredentials(all);

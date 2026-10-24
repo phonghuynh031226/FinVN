@@ -16,6 +16,7 @@ export interface BankConnectionResult {
   accountHolderName?: string;
   sessionId?: string;
   browserId?: string;
+  clientId?: string;
   browserToken?: string;
   duration?: number;
   message?: string;

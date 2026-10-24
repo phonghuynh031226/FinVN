@@ -380,7 +380,70 @@ export default function App() {
       return;
     }
 
-    setSyncAccount(target);
+    try {
+      addToast('info', `Đang kết nối tải giao dịch từ ${target.bankName}...`);
+      await bankApiService.syncSavedAccount(target.id);
+      addToast('success', `Đã đồng bộ thành công tài khoản ${target.displayName}!`);
+      await refreshData();
+      return;
+    } catch (err: any) {
+      const msg = err.message || '';
+      if (msg.includes('Không tìm thấy thông tin đồng bộ') || msg.includes('404')) {
+        setSyncAccount(target);
+      } else {
+        addToast('error', `Lỗi đồng bộ ${target.bankName}: ${msg}`);
+      }
+    }
+  };
+
+  const handleSyncAccountCard = async (acc: BankAccount) => {
+    const credsMap = storageService.getBankCredentials();
+    let creds: { username: string; password?: string; browserId?: string; clientId?: string } | undefined = credsMap[acc.id];
+    if (!creds) {
+      creds = Object.values(credsMap).find(
+        (c: any) => c.accountNumber === acc.accountNumber || c.username === acc.accountNumber
+      );
+      if (creds?.username && creds?.password) {
+        storageService.saveAccountCredential(acc.id, creds);
+      }
+    }
+
+    if (creds?.username && creds?.password) {
+      addToast('info', `Đang tải giao dịch mới nhất từ ${acc.bankName}...`);
+      try {
+        await bankApiService.syncBank({
+          provider: getBankProvider(acc.bankName),
+          username: creds.username,
+          password: creds.password,
+          browserId: creds.browserId,
+          clientId: creds.clientId,
+          accountNumber: acc.accountNumber,
+          bankName: acc.bankName,
+          displayName: acc.displayName,
+          color: acc.color,
+          initialBalance: acc.initialBalance,
+        });
+        addToast('success', `Đã đồng bộ thành công tài khoản ${acc.displayName}!`);
+        await refreshData();
+        return;
+      } catch (err: any) {
+        // Fallback to syncSavedAccount
+      }
+    }
+
+    try {
+      addToast('info', `Đang kết nối tải giao dịch từ ${acc.bankName}...`);
+      await bankApiService.syncSavedAccount(acc.id);
+      addToast('success', `Đã đồng bộ thành công tài khoản ${acc.displayName}!`);
+      await refreshData();
+    } catch (err: any) {
+      const msg = err.message || '';
+      if (msg.includes('Không tìm thấy thông tin đồng bộ') || msg.includes('404')) {
+        setSyncAccount(acc);
+      } else {
+        addToast('error', `Lỗi đồng bộ ${acc.bankName}: ${msg}`);
+      }
+    }
   };
 
   const handleUpdateAccount = async (id: string, updates: UpdateBankAccountInput) => {
@@ -669,7 +732,7 @@ export default function App() {
                         setEditingAccount(a);
                         setAccountModalOpen(true);
                       }}
-                      onSync={(a) => setSyncAccount(a)}
+                      onSync={handleSyncAccountCard}
                       onDelete={handleDeleteAccount}
                       onQuickUpdate={handleUpdateAccount}
                     />

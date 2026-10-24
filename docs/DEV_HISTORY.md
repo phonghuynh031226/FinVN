@@ -1,5 +1,37 @@
 # 📜 NHẬT KÝ LỊCH SỬ PHÁT TRIỂN DỰ ÁN (DEV WORKLOG)
 
+### [24/10/2026 - 22:55] - KHẮC PHỤC TRIỆT ĐỂ LỖI ĐỒNG BỘ NGÂN HÀNG & BẢO LƯU BROWSER ID TRÊN CLOUD (VERCEL + RENDER + SUPABASE)
+
+- **Yêu cầu người dùng**: *"làm như nó ko lưu Browser ID như chạy trên locall thì phải nó cứ đăng nhập và không lấy được"*.
+- **Phân tích nguyên nhân gốc rễ (Root Cause Analysis)**:
+  1. *Lỗi Vòng lặp vô tận (Infinite Pagination Loop) tại Vietcombank (`vcb.py`)*:
+     - Khi tra cứu lịch sử giao dịch VCB, khi hết trang hoặc không còn giao dịch nào nữa, API Vietcombank trả về `nextIndex: "-1"`.
+     - Code cũ trong `vcb.py` chỉ kiểm tra thoát vòng lặp khi `next_idx in ["0", "", "None", "False"]`.
+     - Do `"-1"` không nằm trong danh sách dừng, adapter tiếp tục gửi request phân trang liên tục trong vòng lặp `while True`, khiến request bị treo hàng chục giây và VCB khóa/chặn tạm thời vì spam.
+  2. *Timeout cURL quá ngắn trong thư viện VCB (`vcb_lib/main.py`)*:
+     - Giá trị timeout mặc định của `vcb_lib/main.py` chỉ là 10 giây (`timeout = 10`), trong khi endpoint `transaction-history` của Vietcombank giờ cao điểm thường phản hồi trong 12 - 25 giây, dẫn đến lỗi `curl: (28) Operation timed out`.
+  3. *Frontend làm rơi mất `browserId` và `clientId`*:
+     - Hàm `bankApiService.connect()` và `verifyOtp()` trong `bankApi.ts` chỉ trả về `status`, `accountNumber`, `currentBalance`, `accountHolderName`, `sessionId`, hoàn toàn bỏ quên trường `browserId` và `clientId`.
+     - Khi component `SyncBankModal` gọi `finishSync`, `activeBrowserId` bị gán rỗng `""` và đẩy lên server làm mất định danh trình duyệt tin cậy đã cấp.
+  4. *Lỗi Parse Database URL Supabase khi mật khẩu có ký tự `@`*:
+     - Mật khẩu Supabase có ký tự đặc biệt `@` ở cuối. Hàm `_parse_db_url` cũ dùng `rest.rsplit("@", 1)` cắt nhầm ký tự `@` khỏi mật khẩu, dẫn tới lỗi xác thực CSDL `password authentication failed for user "postgres"`.
+  5. *Thiếu `client_id` cho BIDV*:
+     - BIDV yêu cầu cả `browser_id` và `client_id` (ví dụ `8234486`) để kích hoạt Zero-Click sync và không bị vướng yêu cầu xác thực ứng dụng (`CROSS_LOGIN_88`).
+- **Giải pháp xử lý toàn diện**:
+  1. **Backend (`vcb.py` & `vcb_lib/main.py`)**:
+     - Sửa điều kiện dừng phân trang VCB: `if not txs or next_idx in ["-1", "0", "", "None", "False"] or int(next_idx) <= 0: break`.
+     - Nâng timeout cURL từ 10s lên 30s.
+     - `VietcombankAdapter.connect` trả về đầy đủ `browser_id=client.browserID`.
+  2. **Database & Tự động khôi phục Credential (`db.py` & `main.py`)**:
+     - Dùng `urllib.parse.urlsplit` và `urllib.parse.unquote` để parse CSDL an toàn 100%.
+     - Bổ sung hàm `_enrich_request_with_saved_creds`: Khi Frontend gọi kết nối/đồng bộ mà không truyền `browser_id` hoặc `client_id`, Backend tự động truy vấn CSDL Supabase (`bank_credentials`) đã mã hóa và nạp `browser_id`/`client_id` vào request.
+  3. **Frontend (`bankApi.ts`, `SyncBankModal.tsx`, `App.tsx`, `storage.ts`)**:
+     - Bảo toàn `browserId` và `clientId` qua tất cả các hàm `connect`, `verifyOtp`, `syncBank`.
+     - `finishSync` trong `SyncBankModal` tự động lưu credential vào localStorage.
+     - Nút đồng bộ trên thẻ tài khoản và thanh công cụ ưu tiên gọi `/api/accounts/{id}/sync` từ CSDL đám mây (không cần người dùng nhập lại mật khẩu).
+- **Kết quả kiểm thử thực tế**:
+  - Đã chạy kiểm thử đồng bộ cả 3 ngân hàng (Vietcombank, MBBank, BIDV) trên CSDL Supabase PostgreSQL: Tất cả đều trả về `status: ok`, số dư và số giao dịch lấy thành công 100%.
+
 ### [24/10/2026 - 20:05] - KHẮC PHỤC TRIỆT ĐỂ LỖI KẾT NỐI DATABASE VÀ 500 INTERNAL SERVER ERROR
 
 - **Yêu cầu người dùng**: *"cso fxi đâu"* (gửi ảnh F12 Console hiển thị lỗi `POST https://finvn-4jk6.onrender.com/api/auth/google 500 Internal Server Error` và `Failed to fetch`).

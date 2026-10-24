@@ -534,6 +534,7 @@ class BIDVAdapter:
 
         saved_bid, saved_cid = self.get_saved_device_credentials(uname)
         browser_id = (request.browser_id or "").strip() or saved_bid
+        client_id = (getattr(request, "client_id", None) or "").strip() or saved_cid
         if not browser_id:
             browser_id = f"BIDV_{secrets.token_hex(16)}"
 
@@ -541,7 +542,7 @@ class BIDVAdapter:
             username=uname,
             password=request.password,
             browser_id=browser_id,
-            client_id=saved_cid,
+            client_id=client_id,
         )
 
         client.login(max_retries=10)
@@ -593,6 +594,9 @@ class BIDVAdapter:
             accountNumber=acc_no,
             currentBalance=current_balance,
             accountHolderName=acc_name,
+            browser_id=client.browser_id,
+            browserId=client.browser_id,
+            client_id=client.client_id,
         )
 
     def transactions(self, request: TransactionRequest) -> list[NormalizedTransaction]:

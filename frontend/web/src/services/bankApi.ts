@@ -76,6 +76,8 @@ export const bankApiService = {
       currentBalance: payload.currentBalance ?? payload.current_balance ?? 0,
       accountHolderName: payload.accountHolderName || payload.account_holder_name,
       sessionId: payload.sessionId,
+      browserId: payload.browserId || payload.browser_id || input.browserId,
+      clientId: payload.clientId || payload.client_id,
     };
   },
 
@@ -105,6 +107,8 @@ export const bankApiService = {
       currentBalance: payload.currentBalance ?? payload.current_balance ?? 0,
       accountHolderName: payload.accountHolderName || payload.account_holder_name,
       sessionId: payload.sessionId,
+      browserId: payload.browserId || payload.browser_id || input.browserId,
+      clientId: payload.clientId || payload.client_id,
     };
   },
 
@@ -117,6 +121,7 @@ export const bankApiService = {
         username: input.username,
         password: input.password,
         browser_id: input.browserId,
+        client_id: (input as any).clientId || (input as any).client_id,
         account_number: input.accountNumber,
         from_date: fromDate,
         to_date: toDate,
@@ -133,6 +138,7 @@ export const bankApiService = {
     color?: string;
     initialBalance?: number;
     forceFull?: boolean;
+    clientId?: string;
   }): Promise<{
     status: string;
     account: any;
@@ -143,6 +149,7 @@ export const bankApiService = {
     new_inserted_count: number;
     current_balance: number;
     browser_id?: string;
+    client_id?: string;
   }> {
     if (!CONNECTOR_URL) throw new Error('Chưa cấu hình máy chủ kết nối ngân hàng.');
     const response = await fetchWithTimeout(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/sync`, {
@@ -152,6 +159,7 @@ export const bankApiService = {
         username: input.username,
         password: input.password,
         browser_id: input.browserId,
+        client_id: input.clientId || (input as any).client_id,
         account_number: input.accountNumber,
         bank_name: input.bankName,
         display_name: input.displayName,

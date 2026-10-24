@@ -74,15 +74,26 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
   if (!isOpen) return null;
 
   // Hoàn tất tải giao dịch và lưu dữ liệu
-  const finishSync = async (activeBrowserId: string, currentBalance: number, targetAccountNo?: string) => {
+  const finishSync = async (activeBrowserId: string, currentBalance: number, targetAccountNo?: string, activeClientId?: string) => {
     const provider = getBankProvider(account.bankName);
     setStatusMessage('Đang lưu thông tin mã hóa và đồng bộ giao dịch...');
     const result = await bankApiService.syncBank({
       provider, username: username.trim(), password,
       accountNumber: targetAccountNo || account.accountNumber,
       browserId: activeBrowserId,
+      clientId: activeClientId,
       bankName: account.bankName, displayName: account.displayName, color: account.color,
       initialBalance: account.initialBalance, forceFull: true,
+    });
+
+    const finalBrowserId = result.browser_id || activeBrowserId;
+    const finalClientId = result.client_id || activeClientId;
+    const { storageService } = await import('../../services/storage');
+    storageService.saveAccountCredential(account.id, {
+      username: username.trim(),
+      password,
+      browserId: finalBrowserId,
+      clientId: finalClientId,
     });
 
     onSuccess(
@@ -128,7 +139,8 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
       }
 
       const activeBrowserId = connectResult.browserId || savedBrowserId || undefined;
-      await finishSync(activeBrowserId || '', connectResult.currentBalance || 0, connectResult.accountNumber);
+      const activeClientId = connectResult.clientId || undefined;
+      await finishSync(activeBrowserId || '', connectResult.currentBalance || 0, connectResult.accountNumber, activeClientId);
     } catch (err: any) {
       setErrorMsg(err.message || 'Đồng bộ thất bại. Vui lòng kiểm tra lại thông tin.');
     } finally {
@@ -161,7 +173,7 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
       });
 
       setStatusMessage('Kích hoạt trình duyệt thành công! Đang tải dữ liệu giao dịch...');
-      await finishSync(targetBrowserId, result.currentBalance || 0, result.accountNumber);
+      await finishSync(targetBrowserId, result.currentBalance || 0, result.accountNumber, result.clientId);
     } catch (err: any) {
       setErrorMsg(err.message || 'Mã OTP không chính xác hoặc đã hết hiệu lực.');
     } finally {

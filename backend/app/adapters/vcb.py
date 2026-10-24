@@ -216,10 +216,15 @@ class VCBAdapter:
                             seen_refs.add(key)
                             all_txs.append(tx)
 
-                    # Kiểm tra xem có trang tiếp theo không (VCB trả về nextIndex: "0" nếu hết trang)
+                    # Kiểm tra xem có trang tiếp theo không (VCB trả về nextIndex: "-1" hoặc "0" nếu hết trang)
                     next_idx = str(page_data.get("next_index", "0")).strip()
-                    if next_idx in ["0", "", "None", "False"]:
+                    if not txs or next_idx in ["-1", "0", "", "None", "False"]:
                         break
+                    try:
+                        if int(next_idx) <= 0:
+                            break
+                    except ValueError:
+                        pass
                     page_index += 1
             except Exception as e:
                 logger.warning(f"Lỗi khi tải lịch sử VCB đợt {str_from} - {str_to}: {e}")
