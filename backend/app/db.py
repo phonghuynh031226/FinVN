@@ -29,6 +29,7 @@ DB_PORT = int(os.getenv("DB_PORT", "5432"))
 DB_NAME = os.getenv("DB_NAME", "finvn_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 _pool: Optional[pool.SimpleConnectionPool] = None
 
@@ -36,17 +37,23 @@ _pool: Optional[pool.SimpleConnectionPool] = None
 def get_connection_pool() -> pool.SimpleConnectionPool:
     global _pool
     if _pool is None or _pool.closed:
-        if not DB_PASSWORD:
-            raise RuntimeError("DB_PASSWORD is required; configure it in the backend environment.")
-        _pool = pool.SimpleConnectionPool(
-            minconn=1,
-            maxconn=10,
-            host=DB_HOST,
-            port=DB_PORT,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-        )
+        if DATABASE_URL:
+            dsn = DATABASE_URL
+            if dsn.startswith("postgres://"):
+                dsn = dsn.replace("postgres://", "postgresql://", 1)
+            _pool = pool.SimpleConnectionPool(minconn=1, maxconn=10, dsn=dsn)
+        else:
+            if not DB_PASSWORD:
+                raise RuntimeError("DB_PASSWORD is required; configure it in the backend environment.")
+            _pool = pool.SimpleConnectionPool(
+                minconn=1,
+                maxconn=10,
+                host=DB_HOST,
+                port=DB_PORT,
+                dbname=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD,
+            )
     return _pool
 
 
