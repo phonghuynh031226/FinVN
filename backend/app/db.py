@@ -34,14 +34,70 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 _pool: Optional[pool.SimpleConnectionPool] = None
 
 
+def _parse_db_url(url: str) -> dict:
+    import re
+    url = url.strip()
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    # Gỡ bỏ dấu ngoặc vuông nếu người dùng lỡ giữ nguyên mẫu [PASSWORD]
+    url = re.sub(r':\[([^\]]*)\]@', r':\1@', url)
+
+    prefix = "postgresql://"
+    if not url.startswith(prefix) or "@" not in url:
+        return {}
+    rest = url[len(prefix):]
+    user_pass, host_rest = rest.rsplit("@", 1)
+
+    if ":" in user_pass:
+        user, password = user_pass.split(":", 1)
+    else:
+        user, password = user_pass, ""
+
+    path = ""
+    if "/" in host_rest:
+        host_port, path = host_rest.split("/", 1)
+    else:
+        host_port = host_rest
+
+    dbname = path.split("?")[0] if path else "postgres"
+    if not dbname:
+        dbname = "postgres"
+
+    if ":" in host_port:
+        host, port_str = host_port.split(":", 1)
+        port = int(port_str)
+    else:
+        host = host_port
+        port = 5432
+
+    return {
+        "user": user.strip(),
+        "password": password.strip(),
+        "host": host.strip(),
+        "port": port,
+        "dbname": dbname.strip(),
+        "sslmode": "require",
+    }
+
+
 def get_connection_pool() -> pool.SimpleConnectionPool:
     global _pool
     if _pool is None or _pool.closed:
         if DATABASE_URL:
-            dsn = DATABASE_URL
-            if dsn.startswith("postgres://"):
-                dsn = dsn.replace("postgres://", "postgresql://", 1)
-            _pool = pool.SimpleConnectionPool(minconn=1, maxconn=10, dsn=dsn)
+            cfg = _parse_db_url(DATABASE_URL)
+            if cfg and cfg.get("host"):
+                _pool = pool.SimpleConnectionPool(
+                    minconn=1,
+                    maxconn=10,
+                    host=cfg["host"],
+                    port=cfg["port"],
+                    dbname=cfg["dbname"],
+                    user=cfg["user"],
+                    password=cfg["password"],
+                    sslmode=cfg.get("sslmode", "require"),
+                )
+            else:
+                _pool = pool.SimpleConnectionPool(minconn=1, maxconn=10, dsn=DATABASE_URL)
         else:
             if not DB_PASSWORD:
                 raise RuntimeError("DB_PASSWORD is required; configure it in the backend environment.")
