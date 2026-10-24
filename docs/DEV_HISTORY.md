@@ -1239,13 +1239,21 @@ Tài liệu này ghi lại toàn bộ lịch sử các công việc đã thực 
        - Bổ sung trường `browser_id` vào `AccountSnapshot` trong `backend/app/main.py` để sau khi kết nối, mã Browser ID chuẩn sẽ được mã hóa và lưu vào bảng `bank_credentials` trên Supabase PostgreSQL.
        - Người dùng kết nối Vietcombank sẽ đăng nhập thẳng mà không bị vướng mã lỗi 20231 hay hỏi OTP.
 
+  6. **Đồng bộ toàn diện 132 giao dịch Local sang Supabase Cloud**:
+     - *Hiện tượng*: Trang `fin-vn.vercel.app` ban đầu chỉ hiển thị 66 giao dịch mẫu (Thu: ~13M, Chi: ~13M), trong khi `localhost:5173` hiển thị 132 giao dịch thật (Thu: +37.516.932 đ, Chi: -38.457.428 đ).
+     - *Nguyên nhân*: Cơ sở dữ liệu Supabase ban đầu chỉ tạo khung bảng rỗng, dữ liệu 132 giao dịch thật vẫn lưu cục bộ trong PostgreSQL `finvn_db` trên máy tính cá nhân. Ngoài ra, Supabase sử dụng múi giờ UTC mặc định khiến các giao dịch ngày 01/10 (GMT+7) bị lệch sang tháng 9.
+     - *Khắc phục*:
+       - Viết script `migrate_local_to_supabase.py` tự động chuyển trọn vẹn 132 giao dịch và cập nhật số dư 3 tài khoản ngân hàng sang Supabase.
+       - Cấu hình múi giờ `Asia/Ho_Chi_Minh` trực tiếp trên database Supabase và thêm cờ `options="-c timezone=Asia/Ho_Chi_Minh"` vào connection pool trong `backend/app/db.py`.
+       - Cả hai trang web (Local và Cloud Vercel) hiện đã hiển thị **trùng khớp 100% từng đồng (+37.516.932 đ / -38.457.428 đ)**.
+
 - **Tệp đã chỉnh sửa & tạo mới**:
-  - `backend/app/db.py`: Bổ sung `_parse_db_url`, chuẩn hóa kết nối Supabase pooler, route `/health/db`.
+  - `backend/app/db.py`: Bổ sung `_parse_db_url`, chuẩn hóa kết nối Supabase pooler, route `/health/db`, ép múi giờ `Asia/Ho_Chi_Minh`.
   - `backend/app/main.py`: Nhận diện dynamic port, Bearer token, CORS regex Vercel, toàn vẹn Exception Handler, `browser_id` trong `AccountSnapshot`.
   - `backend/app/auth.py`: Hỗ trợ trích xuất Bearer token từ `Authorization: Bearer <token>`.
   - `backend/app/adapters/vcb.py`: Tự động nạp mã Browser ID tin cậy đã kích hoạt, hỗ trợ `VCB_BROWSER_ID`.
   - `backend/Dockerfile`: Ghi sẵn Browser ID tin cậy vào container build.
-  - `frontend/web/src/App.tsx`: State `currentUser` và đồng bộ đăng nhập tức thì.
+  - `frontend/web/src/App.tsx`: State `currentUser`, đồng bộ đăng nhập tức thì, auto-sync chạy ngầm và tối ưu toast hướng dẫn.
   - `frontend/web/src/services/authService.ts`: Lưu trữ token kép và đính kèm Bearer token.
   - `frontend/web/src/services/bankApi.ts`: Đính kèm Bearer token vào API kết nối và đồng bộ.
   - `docs/HUONG_DAN_DEPLOY_CLOUD.md`: Tạo tài liệu triển khai toàn diện và các lưu ý cấu hình Vercel/Render/Supabase.
