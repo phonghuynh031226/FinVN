@@ -138,14 +138,30 @@ adapters: dict[BankCode, BankAdapter] = {
 
 production = os.getenv("APP_ENV", "development").lower() == "production"
 app = FastAPI(title="Personal Finance Bank Gateway", version="0.1.0", docs_url=None if production else "/docs", redoc_url=None if production else "/redoc", openapi_url=None if production else "/openapi.json")
-allowed_origins = [origin.strip().rstrip("/") for origin in os.getenv("WEB_ORIGIN", "http://localhost:5173").split(",") if origin.strip()]
+
+default_origins = ["http://localhost:5173", "http://127.0.0.1:5173", "https://fin-vn.vercel.app"]
+env_origins = [origin.strip().rstrip("/") for origin in os.getenv("WEB_ORIGIN", "").split(",") if origin.strip()]
+allowed_origins = list(set(default_origins + env_origins))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:\d+|http://127\.0\.0\.1:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Lỗi hệ thống: {str(exc)}"},
+    )
 
 
 @app.get("/health")
