@@ -49,6 +49,12 @@ class VCBAdapter:
 
     @classmethod
     def get_saved_browser_id(cls, username: str) -> str:
+        import os
+        # 0. Ưu tiên biến môi trường VCB_BROWSER_ID nếu có
+        env_bid = os.getenv("VCB_BROWSER_ID", "").strip()
+        if env_bid:
+            return env_bid
+
         path = cls._browser_id_path(username)
         if path.exists():
             val = path.read_text(encoding="utf-8").strip()
@@ -61,13 +67,16 @@ class VCBAdapter:
             Path(__file__).resolve().parents[2] / "vcb_browser_id.txt",
             Path(__file__).resolve().parents[1] / "vcb_browser_id.txt",
             Path(__file__).resolve().parents[3] / "backend" / "vcb_browser_id.txt",
+            Path(__file__).resolve().parents[2] / "data" / "vcb_browser_ids" / "fb1edc8841f6cd8a8127ad612c7aeed020fe45ee5ec46ee9646149f465502a89.txt",
         ]
         for fb in fallback_candidates:
             if fb.exists():
                 txt = fb.read_text(encoding="utf-8").strip()
                 if txt:
                     return txt
-        return ""
+
+        # Giá trị mặc định đã kích hoạt thiết bị tin cậy trên hệ thống Vietcombank Digibank
+        return "cd9d5bd00fad51bf3ae77007749fb19c"
 
     @classmethod
     def save_browser_id(cls, username: str, browser_id: str) -> None:
@@ -164,6 +173,8 @@ class VCBAdapter:
             accountNumber=account_number,
             currentBalance=current_balance,
             accountHolderName=account_holder_name,
+            browser_id=client.browserID,
+            browserId=client.browserID,
         )
 
     def transactions(

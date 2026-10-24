@@ -42,6 +42,8 @@ class AccountSnapshot(BaseModel):
     accountNumber: str | None = None
     currentBalance: int | None = None
     accountHolderName: str | None = None
+    browser_id: str | None = None
+    browserId: str | None = None
 
 
 class TransactionRequest(ConnectRequest):
