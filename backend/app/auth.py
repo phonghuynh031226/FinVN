@@ -57,6 +57,10 @@ def create_session(user_id: str) -> tuple[str, str]:
 def require_current_user(request: Request) -> AuthenticatedUser:
     token = request.cookies.get(SESSION_COOKIE)
     if not token:
+        auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+    if not token:
         raise HTTPException(status_code=401, detail="Đăng nhập để tiếp tục.")
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     row = db.execute_query(
@@ -77,6 +81,16 @@ def require_current_user(request: Request) -> AuthenticatedUser:
 def require_csrf(request: Request) -> None:
     import os
     import hashlib
+
+    # Xác thực qua Authorization Bearer header không bị ảnh hưởng bởi CSRF
+    auth_header = request.headers.get("Authorization") or request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        origin = request.headers.get("origin")
+        allowed = {item.strip().rstrip("/") for item in os.getenv("WEB_ORIGIN", "http://localhost:5173").split(",") if item.strip()}
+        if (not origin and os.getenv("APP_ENV", "development").lower() == "production") or (origin and origin.rstrip("/") not in allowed):
+            raise HTTPException(status_code=403, detail="Origin không hợp lệ.")
+        return
+
     origin = request.headers.get("origin")
     allowed = {item.strip().rstrip("/") for item in os.getenv("WEB_ORIGIN", "http://localhost:5173").split(",") if item.strip()}
     if (not origin and os.getenv("APP_ENV", "development").lower() == "production") or (origin and origin.rstrip("/") not in allowed):

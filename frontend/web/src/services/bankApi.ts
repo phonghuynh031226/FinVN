@@ -15,6 +15,8 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const headers = new Headers(options.headers);
+    const token = localStorage.getItem('finvn_auth_token');
+    if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`);
     const csrf = document.cookie.split('; ').find((part) => part.startsWith('finvn_csrf='))?.split('=').slice(1).join('=');
     if (csrf && !['GET', 'HEAD', 'OPTIONS'].includes((options.method || 'GET').toUpperCase())) headers.set('X-CSRF-Token', decodeURIComponent(csrf));
     const res = await fetch(url, {

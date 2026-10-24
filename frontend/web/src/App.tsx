@@ -13,6 +13,7 @@ import { ToastContainer, ToastMessage } from './components/common/Toast';
 
 import { BankAccount, CreateBankAccountInput, UpdateBankAccountInput, getBankProvider } from './types/bankAccount';
 import { Transaction, CreateTransactionInput, FinancialSummary } from './types/transaction';
+import { UserProfile } from './types/user';
 import { TransactionFilter } from './types/filter';
 import { getDateRangeByPreset } from './utils/date';
 import { dataService } from './services/dataService';
@@ -24,6 +25,7 @@ import { Plus, CreditCard, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => authService.getCurrentUser());
   const [currentTab, setCurrentTab] = useState<TabKey>('dashboard');
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [syncAccount, setSyncAccount] = useState<BankAccount | null>(null);
@@ -249,6 +251,7 @@ export default function App() {
   // Lắng nghe thay đổi trạng thái đăng nhập
   useEffect(() => {
     const unsub = authService.subscribe((user) => {
+      setCurrentUser(user);
       if (!user) {
         setAccounts([]);
         setTransactions([]);
@@ -445,16 +448,20 @@ export default function App() {
   const { title, subtitle } = getTabTitle();
 
   // Khi chưa đăng nhập: Hiển thị toàn màn hình Trang Chào Mừng độc lập (KHÔNG hiển thị Header hay Sidebar)
-  if (!authService.isAuthenticated()) {
+  if (!currentUser) {
     return (
       <div style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
         <WelcomeView
           theme={theme}
           onToggleTheme={toggleTheme}
-          onLoginSuccess={() => {
+          onLoginSuccess={(user) => {
+            setCurrentUser(user);
             refreshData();
             autoSyncAccounts(true, true);
             addToast('success', 'Đăng nhập thành công! Chào mừng bạn trở lại.');
+          }}
+          onError={(err) => {
+            addToast('error', err);
           }}
         />
         <ToastContainer toasts={toasts} onDismiss={removeToast} />

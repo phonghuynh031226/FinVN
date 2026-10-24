@@ -578,10 +578,13 @@ def auth_google(req: GoogleAuthRequest, response: Response):
 
     session_token, csrf_token = create_session(user["id"])
     secure_cookie = os.getenv("APP_ENV", "development").lower() == "production"
-    response.set_cookie(SESSION_COOKIE, session_token, httponly=True, secure=secure_cookie, samesite="lax", path="/", max_age=7 * 24 * 60 * 60)
-    response.set_cookie(CSRF_COOKIE, csrf_token, httponly=False, secure=secure_cookie, samesite="lax", path="/", max_age=7 * 24 * 60 * 60)
+    samesite_val = "none" if secure_cookie else "lax"
+    response.set_cookie(SESSION_COOKIE, session_token, httponly=True, secure=secure_cookie, samesite=samesite_val, path="/", max_age=7 * 24 * 60 * 60)
+    response.set_cookie(CSRF_COOKIE, csrf_token, httponly=False, secure=secure_cookie, samesite=samesite_val, path="/", max_age=7 * 24 * 60 * 60)
     return {
         "status": "ok",
+        "token": session_token,
+        "csrf_token": csrf_token,
         "user": {
             "id": user["id"],
             "email": user["email"],

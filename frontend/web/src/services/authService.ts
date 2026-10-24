@@ -52,11 +52,14 @@ class AuthService {
 
   private loadFromStorage() {
     try {
-      localStorage.removeItem('finvn_auth_token');
-      this.currentUser = null;
+      const stored = localStorage.getItem(USER_STORAGE_KEY);
+      if (stored) {
+        this.currentUser = JSON.parse(stored);
+      } else {
+        this.currentUser = null;
+      }
       void this.restoreSession();
     } catch {
-      this.currentUser = null;
       this.currentUser = null;
     }
   }
@@ -66,7 +69,7 @@ class AuthService {
   }
 
   public getToken(): string | null {
-    return null;
+    return localStorage.getItem('finvn_auth_token');
   }
 
   public getUserId(): string {
@@ -109,7 +112,9 @@ class AuthService {
 
     try {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.currentUser));
-      localStorage.removeItem('finvn_auth_token');
+      if (data.token) {
+        localStorage.setItem('finvn_auth_token', data.token);
+      }
     } catch {
       // ignore
     }
@@ -133,7 +138,15 @@ class AuthService {
 
   public async restoreSession(): Promise<void> {
     try {
-      const response = await fetch(`${CONNECTOR_URL}/api/auth/me`, { credentials: 'include' });
+      const headers = new Headers();
+      const token = this.getToken();
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
+      const response = await fetch(`${CONNECTOR_URL}/api/auth/me`, { 
+        headers,
+        credentials: 'include' 
+      });
       if (!response.ok) throw new Error('Session expired');
       const user = await response.json();
       this.currentUser = { ...user, isAuthenticated: true } as UserProfile;
@@ -141,6 +154,7 @@ class AuthService {
     } catch {
       this.currentUser = null;
       localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem('finvn_auth_token');
     }
     this.notify();
   }
@@ -148,6 +162,10 @@ class AuthService {
   public apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
     const csrf = document.cookie.split('; ').find((part) => part.startsWith(`${CSRF_COOKIE}=`))?.split('=').slice(1).join('=');
     const headers = new Headers(init.headers);
+    const token = this.getToken();
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
     if (csrf && !['GET', 'HEAD', 'OPTIONS'].includes((init.method || 'GET').toUpperCase())) {
       headers.set('X-CSRF-Token', decodeURIComponent(csrf));
     }

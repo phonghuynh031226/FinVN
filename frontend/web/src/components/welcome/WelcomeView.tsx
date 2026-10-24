@@ -17,6 +17,7 @@ interface WelcomeViewProps {
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
   onLoginSuccess?: (user: UserProfile) => void;
+  onError?: (err: string) => void;
 }
 
 const highlights = [
@@ -35,6 +36,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
   theme = 'dark',
   onToggleTheme,
   onLoginSuccess,
+  onError,
 }) => {
   const googleButtonRef = useRef<HTMLDivElement>(null);
 
@@ -44,13 +46,16 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({
     authService.renderGoogleButton(
       googleButtonRef.current,
       (user) => onLoginSuccess?.(user),
-      () => {},
+      (err) => {
+        console.error('Google login error:', err);
+        onError?.(err);
+      },
       {
         theme: theme === 'dark' ? 'filled_black' : 'outline',
         width: 270,
       }
     );
-  }, [theme, onLoginSuccess]);
+  }, [theme, onLoginSuccess, onError]);
 
   return (
     <div className="welcome-page">
