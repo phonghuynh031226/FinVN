@@ -22,7 +22,7 @@ if env_file.exists():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+                os.environ[k.strip()] = v.strip()
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
@@ -95,9 +95,10 @@ def get_connection_pool() -> pool.SimpleConnectionPool:
                     user=cfg["user"],
                     password=cfg["password"],
                     sslmode=cfg.get("sslmode", "require"),
+                    options="-c timezone=Asia/Ho_Chi_Minh",
                 )
             else:
-                _pool = pool.SimpleConnectionPool(minconn=1, maxconn=10, dsn=DATABASE_URL)
+                _pool = pool.SimpleConnectionPool(minconn=1, maxconn=10, dsn=DATABASE_URL, options="-c timezone=Asia/Ho_Chi_Minh")
         else:
             if not DB_PASSWORD:
                 raise RuntimeError("DB_PASSWORD is required; configure it in the backend environment.")
@@ -109,6 +110,7 @@ def get_connection_pool() -> pool.SimpleConnectionPool:
                 dbname=DB_NAME,
                 user=DB_USER,
                 password=DB_PASSWORD,
+                options="-c timezone=Asia/Ho_Chi_Minh",
             )
     return _pool
 
