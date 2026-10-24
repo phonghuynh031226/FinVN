@@ -20,6 +20,10 @@ from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from . import db
+from .auth import AuthenticatedUser, SESSION_COOKIE, CSRF_COOKIE, verify_google_credential, create_session, require_current_user, require_csrf
+from .credentials import encrypt_bank_credentials, decrypt_bank_credentials
+
 BankCode = Literal["mb", "vcb", "bidv"]
 
 
@@ -169,9 +173,6 @@ def transactions(bank: BankCode, request: TransactionRequest, current_user: Auth
 # =========================================================================
 # TÍCH HỢP POSTGRESQL & ĐỒNG BỘ GIA TĂNG (INCREMENTAL SYNC)
 # =========================================================================
-from . import db
-from .auth import AuthenticatedUser, SESSION_COOKIE, CSRF_COOKIE, verify_google_credential, create_session, require_current_user, require_csrf
-from .credentials import encrypt_bank_credentials, decrypt_bank_credentials
 
 class SyncBankRequest(BaseModel):
     username: str

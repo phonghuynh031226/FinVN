@@ -1,5 +1,22 @@
 # 📜 NHẬT KÝ LỊCH SỬ PHÁT TRIỂN DỰ ÁN (DEV WORKLOG)
 
+### [24/10/2026 - 15:55] - RÀ SOÁT & DỌN DẸP LỖI TOÀN HỆ THỐNG (BACKEND, DATABASE, FRONTEND)
+
+- **Yêu cầu người dùng**: *"xem hiện tại còn lỗi gì ko"* (rà soát toàn diện các tầng ứng dụng để đảm bảo hệ thống vận hành trơn tru, không có lỗi tiềm ẩn).
+- **Kết quả rà soát & khắc phục**:
+  1. **Backend & API Gateway (Phát hiện & Sửa lỗi)**:
+     - *Lỗi phát hiện*: Trong [`backend/app/main.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/main.py), hàm phụ thuộc `require_current_user` được gọi trên dòng 153 trước khi được import ở dòng 173 (gây ra lỗi `NameError` khi reload module).
+     - *Tiến trình chạy ngầm*: Tồn tại một tiến trình Uvicorn cũ chạy ngầm chiếm cổng 8787 khiến endpoint `/api/auth/me` trả về `422 Unprocessable Content`.
+     - *Xử lý*: Đã chuyển toàn bộ import `db`, `auth`, `credentials` lên đầu file [`main.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/main.py); dọn sạch tiến trình con bị treo và khởi động lại FastAPI máy chủ sạch sẽ trên cổng 8787.
+     - *Kết quả*: `/health` phản hồi `200 OK`, `/api/auth/me` phản hồi đúng `401 Unauthorized` khi chưa đăng nhập.
+  2. **Cơ sở dữ liệu PostgreSQL (finvn_db)**:
+     - Hoạt động ổn định trên cổng 5432.
+     - Kiểm tra dữ liệu: Đầy đủ **3 tài khoản ngân hàng** (VCB, MBBank, BIDV) và **132 giao dịch lịch sử** gắn chặt với tài khoản Google duy nhất (`phonghuynh031226@gmail.com`). Không còn tài khoản rác hay demo user.
+  3. **Frontend React & Trình duyệt (Clean 100%)**:
+     - `npm run build`: TypeScript & Vite biên dịch hoàn hảo trong `521ms` (0 lỗi, 0 cảnh báo linter).
+     - Browser Console: **0 lỗi, 0 warning**, tất cả network request và asset tải trơn tru.
+     - Giao diện Chào mừng: Vừa vặn 100% trong khung nhìn màn hình (`100vh`), không có thanh cuộn dọc thừa, chuyển đổi mượt mà giữa chế độ Tối và Sáng.
+
 ### [24/10/2026 - 14:40] - CHUẨN HÓA GIAO DIỆN CHÀO MỪNG VỪA KHÍT 100% MÀN HÌNH (ZERO-SCROLL PERFECTION)
 
 - **Phản hồi từ người dùng**: *"làm lại cho đẹp ko kéo lên xuống"* (yêu cầu toàn bộ nội dung nằm trọn 100% trong một khung nhìn duy nhất, tuyệt đối không xuất hiện thanh cuộn hay phải kéo lên kéo xuống, đồng thời nâng tầm thẩm mỹ tinh tế, sang trọng).

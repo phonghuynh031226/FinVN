@@ -20,3 +20,6 @@ backend/vcb_parsed_user.json
 backend/vcb_session_dump.json
 backend/vcb_browser_id.txt
 *.har
+
+# Scratch and debug scripts
+scratch/
