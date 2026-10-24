@@ -1,5 +1,19 @@
 # 📜 NHẬT KÝ LỊCH SỬ PHÁT TRIỂN DỰ ÁN (DEV WORKLOG)
 
+### [24/10/2026 - 20:05] - KHẮC PHỤC TRIỆT ĐỂ LỖI KẾT NỐI DATABASE VÀ 500 INTERNAL SERVER ERROR
+
+- **Yêu cầu người dùng**: *"cso fxi đâu"* (gửi ảnh F12 Console hiển thị lỗi `POST https://finvn-4jk6.onrender.com/api/auth/google 500 Internal Server Error` và `Failed to fetch`).
+- **Phân tích lỗi từ F12 Console & Tracing máy chủ**:
+  1. *Nguyên nhân 500 Error*: Endpoint `/api/auth/google` khi gọi hàm `db.upsert_google_user` đã bị crash do lỗi kết nối CSDL: `psycopg2.OperationalError: connection to server on socket "@aws-0-ap-northeast-2.pooler.supabase.com/.s.PGSQL.5432" failed: Connection refused`.
+  2. *Lỗi Libpq URI Parsing*: Khi biến môi trường `DATABASE_URL` chứa mật khẩu có dấu ngoặc vuông `[...]` hoặc ký tự đặc biệt, thư viện C `libpq` hiểu nhầm host là một socket domain cục bộ và cố kết nối qua Unix socket thay vì TCP IPv4.
+  3. *Lỗi thiếu SSLMode*: Supabase Connection Pooler yêu cầu bắt buộc `sslmode=require`.
+- **Giải pháp xử lý**:
+  1. Thêm bộ tiền xử lý URL thông minh `_parse_db_url` trong [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py): Tự động gỡ bỏ dấu ngoặc vuông nếu người dùng lỡ giữ nguyên mẫu `[...]`, tách chính xác user/password/host/port/dbname và truyền tham số rõ ràng kèm `sslmode=require`.
+  2. Thêm endpoint kiểm tra sức khỏe CSDL `/health/db` trong [`backend/app/main.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/main.py).
+- **Kết quả kiểm thử thực tế**:
+  - `GET https://finvn-4jk6.onrender.com/health/db` phản hồi ngay lập tức: `{"status":"ok","db":"connected","result":1}`.
+  - Kết nối giữa Backend Render và Database Supabase đã **thông suốt 100%**.
+
 ### [24/10/2026 - 18:15] - KHẮC PHỤC TRIỆT ĐỂ LỖI KẸT ĐĂNG NHẬP GOOGLE TRÊN PRODUCTION (CROSS-DOMAIN AUTH & REACT RE-RENDER)
 
 - **Yêu cầu người dùng**: *"đăng nhập mà nó kẹt ở đây r"* (khi bấm đăng nhập Google trên `https://fin-vn.vercel.app`, trang web bị kẹt lại ở màn hình Chào mừng, không chuyển vào Dashboard).
