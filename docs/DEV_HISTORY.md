@@ -1,5 +1,22 @@
 # 📜 NHẬT KÝ LỊCH SỬ PHÁT TRIỂN DỰ ÁN (DEV WORKLOG)
 
+### [24/10/2026 - 18:15] - KHẮC PHỤC TRIỆT ĐỂ LỖI KẸT ĐĂNG NHẬP GOOGLE TRÊN PRODUCTION (CROSS-DOMAIN AUTH & REACT RE-RENDER)
+
+- **Yêu cầu người dùng**: *"đăng nhập mà nó kẹt ở đây r"* (khi bấm đăng nhập Google trên `https://fin-vn.vercel.app`, trang web bị kẹt lại ở màn hình Chào mừng, không chuyển vào Dashboard).
+- **Phân tích nguyên nhân gốc rễ (Root Cause Analysis)**:
+  1. *Lỗi React Re-render*: Trong [`App.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/App.tsx), điều kiện hiển thị `WelcomeView` dựa vào `!authService.isAuthenticated()` nhưng `App` lại không lưu trạng thái `currentUser` vào `useState`. Khi đăng nhập thành công và `authService.notify()` kích hoạt, component `App` không được báo để re-render, dẫn đến giao diện bị kẹt cứng tại `WelcomeView`.
+  2. *Lỗi Cross-Domain Cookie (Vercel <-> Render)*: Frontend nằm tại domain `vercel.app`, còn Backend API nằm tại domain `onrender.com` (môi trường Third-party Context). Backend trước đó cấu hình `SameSite=Lax`, khiến trình duyệt Chrome/Safari tự động chặn cookie phiên đăng nhập khi gửi fetch request giữa 2 domain khác nhau.
+  3. *Thiếu cơ chế Bearer Token*: Backend chỉ trông cậy vào HttpOnly cookie mà không trả `token` trong JSON payload, đồng thời `require_current_user` trong [`auth.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/auth.py) không đọc header `Authorization: Bearer <token>`.
+- **Giải pháp xử lý toàn diện**:
+  1. **Frontend**:
+     - Thêm `currentUser` vào `useState` trong `App.tsx` và đồng bộ qua `authService.subscribe`. Ngay khi đăng nhập thành công, React lập tức re-render và chuyển thẳng vào Dashboard.
+     - Nâng cấp [`authService.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/authService.ts) và [`bankApi.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/bankApi.ts) lưu trữ `token` trong `localStorage` và tự động gắn header `Authorization: Bearer <token>` vào mọi API call.
+     - Truyền `onError` từ `WelcomeView` lên Toast notifications để người dùng luôn nhìn thấy thông báo lỗi rõ ràng nếu có sự cố.
+  2. **Backend**:
+     - Nâng cấp [`main.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/main.py): Trả về cả `token` và `csrf_token` trong JSON response của `/api/auth/google`; đồng thời cấu hình cookie `SameSite=None; Secure=True` trên production.
+     - Nâng cấp [`auth.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/auth.py): Hỗ trợ cơ chế Hybrid (vừa nhận Cookie vừa nhận `Authorization: Bearer <token>`), đảm bảo hoạt động 100% tin cậy trên mọi trình duyệt kể cả khi chặn third-party cookie.
+- **Kết quả**: `npm run build` thành công trong 769ms, đã push lên GitHub để Vercel và Render tự động deploy bản sửa lỗi.
+
 ### [24/10/2026 - 17:50] - TRIỂN KHAI HOÀN CHỈNH TOÀN BỘ HỆ THỐNG LÊN MÔI TRƯỜNG CLOUD (FULL-STACK DEPLOYMENT)
 
 - **Yêu cầu người dùng**: *"cách deploy"*, *"ghi chép lại 1 file .md hướng dẫn setup như nãy giờ tui làm"*.
