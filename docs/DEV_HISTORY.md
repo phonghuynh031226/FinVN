@@ -1,5 +1,25 @@
 # 📜 NHẬT KÝ LỊCH SỬ PHÁT TRIỂN DỰ ÁN (DEV WORKLOG)
 
+### [24/10/2026 - 17:50] - TRIỂN KHAI HOÀN CHỈNH TOÀN BỘ HỆ THỐNG LÊN MÔI TRƯỜNG CLOUD (FULL-STACK DEPLOYMENT)
+
+- **Yêu cầu người dùng**: *"cách deploy"*, *"ghi chép lại 1 file .md hướng dẫn setup như nãy giờ tui làm"*.
+- **Kết quả triển khai thực tế**:
+  1. **Frontend (Vercel)**:
+     - Đã deploy thành công lên Vercel tại URL chính thức: `https://fin-vn.vercel.app`.
+     - Cấu hình Root Directory: `frontend/web`, Preset: `Vite`.
+     - Giao diện Zero-scroll tải tức thì, phản hồi mượt mà trên mọi thiết bị.
+  2. **Cơ sở dữ liệu (Supabase PostgreSQL)**:
+     - Khởi tạo project `finvn-db` tại khu vực Asia-Pacific (Seoul / Singapore).
+     - Chạy toàn bộ schema trong [`sql/init_postgres.sql`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/sql/init_postgres.sql) thành công, tạo đầy đủ 5 bảng: `users`, `user_sessions`, `bank_accounts`, `bank_credentials`, `transactions`.
+     - Cập nhật [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py) hỗ trợ kết nối qua biến môi trường `DATABASE_URL` (direct & session pooler).
+  3. **Backend API Gateway (Render.com)**:
+     - Deploy thành công container Docker từ [`backend/Dockerfile`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/Dockerfile).
+     - URL máy chủ: `https://finvn-4jk6.onrender.com`.
+     - Endpoint `/health` trả về `{"status":"ok","service":"bank-gateway"}`.
+     - Cập nhật Dockerfile hỗ trợ cổng động `${PORT:-8787}` theo tiêu chuẩn của Render.
+  4. **Tài liệu hướng dẫn**:
+     - Tạo tài liệu triển khai chi tiết: [`docs/HUONG_DAN_DEPLOY_CLOUD.md`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/docs/HUONG_DAN_DEPLOY_CLOUD.md) ghi lại toàn bộ các bước, các tham số biến môi trường và quy trình tự động CI/CD.
+
 ### [24/10/2026 - 15:55] - RÀ SOÁT & DỌN DẸP LỖI TOÀN HỆ THỐNG (BACKEND, DATABASE, FRONTEND)
 
 - **Yêu cầu người dùng**: *"xem hiện tại còn lỗi gì ko"* (rà soát toàn diện các tầng ứng dụng để đảm bảo hệ thống vận hành trơn tru, không có lỗi tiềm ẩn).
