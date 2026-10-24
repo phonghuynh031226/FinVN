@@ -29,7 +29,11 @@ Tài liệu này ghi lại chi tiết toàn bộ quy trình triển khai thực 
 4. **Cấu hình biến môi trường (Environment Variables)**:
    * Thêm 2 biến sau:
      * `VITE_GOOGLE_CLIENT_ID`: `48951440016-c9ptnm4iermt0is06hi75uag28vh2750.apps.googleusercontent.com`
-     * `VITE_BANK_CONNECTOR_URL`: Tạm thời để `http://localhost:8787` (hoặc URL backend Render sau Bước 3).
+     * `VITE_BANK_CONNECTOR_URL`: Tạm thời để `http://localhost:8787` (hoặc URL backend Render sau Bước 4).
+   > [!IMPORTANT]
+   > **LƯU Ý QUAN TRỌNG VỀ TYPE TRÊN VERCEL**:
+   > Khi thêm các biến có tiền tố `VITE_`, ở mục **Type** bạn **bắt buộc phải click chọn `Config`** (KHÔNG để mặc định là `Secret`).
+   > *Lý do*: Tiền tố `VITE_` là biến công khai phía client của Vite. Nếu để `Secret`, Vercel sẽ báo lỗi đỏ: *"Remove the public framework prefix to keep this value private. If that's safe, change the variable to Config"*.
 5. Bấm nút **`Deploy`**. Sau ~1 phút, website sẽ hoạt động tại domain: `https://fin-vn.vercel.app`.
 
 ---
@@ -110,11 +114,20 @@ Tài liệu này ghi lại chi tiết toàn bộ quy trình triển khai thực 
 1. Quay lại trang quản trị dự án trên Vercel: [`https://vercel.com/huynh-thanh-phong/fin-vn`](https://vercel.com/huynh-thanh-phong/fin-vn).
 2. Vào **Settings** -> **Environment Variables**.
 3. Cập nhật biến **`VITE_BANK_CONNECTOR_URL`**:
-   * **Value**: `https://finvn-4jk6.onrender.com`
-   * Bấm **Save**.
+   > [!WARNING]
+   > **XỬ LÝ LỖI KHÔNG ĐỔI ĐƯỢC TỪ SECRET SANG CONFIG**:
+   > Nếu lúc khởi tạo dự án đã lỡ lưu biến `VITE_BANK_CONNECTOR_URL` ở dạng `Secret`, Vercel sẽ khóa ô `Config` (*"Saved secrets are write-only, so this variable can't be changed to Config"*).
+   > **Cách xử lý đúng chuẩn trong 20 giây**:
+   > 1. Tại dòng `VITE_BANK_CONNECTOR_URL` trong danh sách, bấm vào dấu **3 chấm `...`** ngoài cùng bên phải -> Chọn dòng chữ đỏ **`Delete`** để xóa biến cũ.
+   > 2. Bấm nút màu đen **`Add Environment Variable`** ở trên để thêm lại:
+   >    * **Key**: `VITE_BANK_CONNECTOR_URL`
+   >    * **Value**: `https://finvn-4jk6.onrender.com`
+   >    * **Type**: Click chọn ô **`Config`** *(ô bên phải, bắt buộc)*.
+   >    * **Environments**: Chọn `Production` (và `Preview`).
+   >    * Bấm **`Save`**.
 4. Chuyển sang tab **Deployments** trên Vercel:
-   * Bấm vào nút **3 chấm `...`** bên cạnh bản build mới nhất -> Chọn **Redeploy**.
-5. Sau 30 giây, quá trình kết nối hoàn tất 100%!
+   * Bấm vào nút màu đen **`Redeploy`** trên thông báo popup xanh ở góc phải, hoặc bấm dấu **3 chấm `...`** ở bản build mới nhất -> Chọn **Redeploy**.
+5. Sau 20-30 giây, quá trình build lại hoàn tất và Frontend đã kết nối thông suốt với Backend Render!
 
 ---
 
