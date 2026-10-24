@@ -144,7 +144,15 @@ export default function App() {
               await bankApiService.syncSavedAccount(acc.id);
               anyUpdated = true;
             } catch (err: any) {
-              if (!silent) addToast('error', `Lỗi đồng bộ ${acc.bankName}: ${err.message || 'không thể đồng bộ'}`);
+              const msg = err.message || '';
+              const isMissingCreds = msg.includes('Không tìm thấy thông tin đồng bộ') || msg.includes('404');
+              if (!silent) {
+                if (isMissingCreds) {
+                  addToast('info', `${acc.bankName}: Chưa lưu mật khẩu đăng nhập ngân hàng. Hãy bấm nút "Đồng bộ" trên thẻ tài khoản.`);
+                } else {
+                  addToast('error', `Lỗi đồng bộ ${acc.bankName}: ${msg}`);
+                }
+              }
             }
             return;
           }
@@ -265,16 +273,16 @@ export default function App() {
 
   // 2. Tự động đồng bộ ngay khi vừa mở ứng dụng + thiết lập chu kỳ cập nhật định kỳ mỗi 30 phút
   useEffect(() => {
-    // Luôn chạy cập nhật ngay lập tức khi người dùng mở Web (chỉ khi đã đăng nhập)
+    // Luôn chạy cập nhật ngầm khi người dùng mở Web (chỉ khi đã đăng nhập)
     if (!hasAutoSyncedRef.current && authService.isAuthenticated()) {
       hasAutoSyncedRef.current = true;
-      autoSyncAccounts(true, false);
+      autoSyncAccounts(false, true);
     }
 
     // Thiết lập chu kỳ tự động cập nhật ngầm định kỳ mỗi 30 phút (30 * 60 * 1000 ms)
     const intervalId = setInterval(() => {
       if (authService.isAuthenticated()) {
-        autoSyncAccounts(true, true);
+        autoSyncAccounts(false, true);
       }
     }, 30 * 60 * 1000);
 
@@ -287,6 +295,39 @@ export default function App() {
     credentials?: { username: string; password: string; browserId?: string }
   ) => {
     const provider = getBankProvider(input.bankName);
+
+    // Nếu có credentials đăng nhập ngân hàng, gọi đồng bộ toàn diện để lưu credentials vào PostgreSQL
+    if (credentials?.username && credentials?.password) {
+      try {
+        const syncRes = await bankApiService.syncBank({
+          provider,
+          username: credentials.username,
+          password: credentials.password,
+          accountNumber: input.accountNumber,
+          browserId: credentials.browserId,
+          bankName: input.bankName,
+          displayName: input.displayName,
+          color: input.color,
+          initialBalance: input.initialBalance,
+          forceFull: true,
+        });
+
+        storageService.saveAccountCredential(input.accountNumber, {
+          username: credentials.username,
+          password: credentials.password,
+          browserId: syncRes.browser_id || credentials.browserId,
+        });
+
+        addToast(
+          'success',
+          `Kết nối ${input.displayName} thành công! Đã nạp ${syncRes.new_inserted_count || 0} giao dịch thực tế.`
+        );
+        await refreshData();
+        return;
+      } catch (err: any) {
+        console.warn('SyncBank khi tạo tài khoản thất bại, fallback lưu tài khoản cơ bản:', err);
+      }
+    }
 
     const newAcc = await dataService.createAccount({
       ...input,
@@ -306,35 +347,6 @@ export default function App() {
       'success',
       `Kết nối ${input.displayName} thành công! Số dư thực tế: ${input.initialBalance.toLocaleString('vi-VN')} VND`
     );
-
-    // Tự động kéo 30 ngày giao dịch từ ngân hàng về ngay lập tức
-    if (credentials?.username && credentials?.password) {
-      try {
-        const today = new Date();
-        const from = new Date(today);
-        from.setDate(today.getDate() - 30);
-        const formatDate = (d: Date) => d.toISOString().slice(0, 10);
-
-        const bankTxs = await bankApiService.getTransactions(
-          {
-            provider,
-            username: credentials.username,
-            password: credentials.password,
-            accountNumber: input.accountNumber,
-            browserId: credentials.browserId,
-          },
-          formatDate(from),
-          formatDate(today)
-        );
-
-        if (bankTxs.length > 0) {
-          const importRes = await dataService.importBankTransactions(newAcc.id, bankTxs);
-          addToast('info', `Đã tự động nạp ${importRes.importedCount} giao dịch thực tế từ ${input.bankName} vào sổ!`);
-        }
-      } catch (err: any) {
-        console.error('Không thể tự động tải giao dịch:', err);
-      }
-    }
 
     await refreshData();
   };
