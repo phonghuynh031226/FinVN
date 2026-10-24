@@ -24,6 +24,7 @@ interface HeaderProps {
   filter: TransactionFilter;
   onFilterChange: (newFilter: TransactionFilter) => void;
   showFilters?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   filter,
   onFilterChange,
   showFilters = true,
+  isAuthenticated = false,
 }) => {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customStart, setCustomStart] = useState(filter.dateRange.startDate);
@@ -138,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right side actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {onSyncAll && (
+          {isAuthenticated && onSyncAll && (
             <button
               type="button"
               onClick={onSyncAll}
@@ -148,8 +150,8 @@ export const Header: React.FC<HeaderProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: 'rgba(99, 102, 241, 0.15)',
-                color: '#a5b4fc',
+                background: 'rgba(99, 102, 241, 0.12)',
+                color: 'var(--accent-primary)',
                 borderColor: 'rgba(99, 102, 241, 0.35)',
                 fontWeight: 600,
               }}
@@ -159,6 +161,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span>{isSyncing ? 'Đang tự động đồng bộ...' : '⚡ Tự động đồng bộ ngay'}</span>
             </button>
           )}
+
         </div>
       </div>
 
@@ -219,9 +222,10 @@ export const Header: React.FC<HeaderProps> = ({
                     border: '1px solid',
                     cursor: 'pointer',
                     transition: 'all var(--transition-fast)',
-                    background: isActive ? 'var(--accent-primary-gradient)' : 'transparent',
+                    background: isActive ? 'var(--accent-primary-gradient)' : 'var(--bg-secondary)',
                     color: isActive ? '#ffffff' : 'var(--text-secondary)',
                     borderColor: isActive ? 'transparent' : 'var(--border-subtle)',
+                    boxShadow: isActive ? 'var(--shadow-sm)' : '0 1px 2px rgba(0, 0, 0, 0.04)',
                   }}
                 >
                   {item.label}
@@ -243,9 +247,10 @@ export const Header: React.FC<HeaderProps> = ({
                   border: '1px solid',
                   cursor: 'pointer',
                   transition: 'all var(--transition-fast)',
-                  background: filter.dateRange.preset === 'CUSTOM' ? 'var(--accent-primary-gradient)' : 'transparent',
+                  background: filter.dateRange.preset === 'CUSTOM' ? 'var(--accent-primary-gradient)' : 'var(--bg-secondary)',
                   color: filter.dateRange.preset === 'CUSTOM' ? '#ffffff' : 'var(--text-secondary)',
                   borderColor: filter.dateRange.preset === 'CUSTOM' ? 'transparent' : 'var(--border-subtle)',
+                  boxShadow: filter.dateRange.preset === 'CUSTOM' ? 'var(--shadow-sm)' : '0 1px 2px rgba(0, 0, 0, 0.04)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
@@ -333,11 +338,12 @@ export const Header: React.FC<HeaderProps> = ({
               style={{
                 fontSize: '0.78rem',
                 fontWeight: 600,
-                color: 'var(--text-secondary)',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'rgba(99, 102, 241, 0.08)',
+                padding: '5px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--bg-secondary)',
                 border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
                 whiteSpace: 'nowrap',
                 display: 'inline-flex',
                 alignItems: 'center',

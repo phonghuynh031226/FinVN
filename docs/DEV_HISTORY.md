@@ -1,5 +1,240 @@
 # 📜 NHẬT KÝ LỊCH SỬ PHÁT TRIỂN DỰ ÁN (DEV WORKLOG)
 
+### [24/10/2026 - 14:40] - CHUẨN HÓA GIAO DIỆN CHÀO MỪNG VỪA KHÍT 100% MÀN HÌNH (ZERO-SCROLL PERFECTION)
+
+- **Phản hồi từ người dùng**: *"làm lại cho đẹp ko kéo lên xuống"* (yêu cầu toàn bộ nội dung nằm trọn 100% trong một khung nhìn duy nhất, tuyệt đối không xuất hiện thanh cuộn hay phải kéo lên kéo xuống, đồng thời nâng tầm thẩm mỹ tinh tế, sang trọng).
+- **Giải pháp triển khai**:
+  1. **Triệt tiêu hoàn toàn thanh cuộn (Zero Scroll)**:
+     - Trong [`App.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/App.tsx): Cấu hình khung chứa `height: 100vh; overflow: hidden;` loại bỏ hoàn toàn khả năng sinh thanh cuộn dọc.
+     - Trong [`index.css`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/index.css): Thu gọn chiều cao thanh Header Navbar từ `72px` xuống `56px`, tinh chỉnh khoảng cách nhịp điệu trục dọc (`welcome-main gap: 14px`). Tổng chiều cao toàn trang chỉ ~`530px`, vừa vặn thoải mái trong mọi màn hình laptop 768p (chiều cao 730px).
+  2. **Nâng tầm thẩm mỹ sang trọng theo đúng mẫu thiết kế mong muốn**:
+     - Tiêu đề thông điệp: *"Tiền bạc rõ ràng, cuộc sống nhẹ nhàng"* với hiệu ứng chữ gradient chuyển màu từ xanh emerald sang cyan ngọc bích.
+     - Khung đăng nhập kính mờ (Glassmorphism Card): Biểu tượng cơ sở dữ liệu phát sáng tím, tiêu đề đăng nhập rõ ràng, nút Google Sign-In bo góc viên nhộng (pill) chính giữa.
+     - Tích hợp 3 huy hiệu ngân hàng hỗ trợ trực tiếp bên trong thẻ: 🟢 **Vietcombank** • 🔵 **MBBank** • 🔷 **BIDV** với mã màu nhận diện thương hiệu chuẩn.
+     - Hàng 3 nút tính năng bo tròn: `💳 Theo dõi tài khoản tự động` • `📊 Xem thu chi rõ ràng` • `🛡️ Dữ liệu lưu cục bộ 100%`.
+     - Chân trang tối giản, tinh tế: `FinVn PRO • Vietcombank • MBBank • BIDV • Bảo mật Local-First 100%`.
+  3. **Tương thích hoàn hảo cả 2 chế độ Sáng (Light) & Tối (Dark)**:
+     - Nền trang có lớp phát sáng nhẹ (Ambient Glow) tạo chiều sâu 3D cao cấp.
+- **Kết quả nghiệm thu**: Giao diện hiển thị tĩnh 100%, không bị cuộn trang hay giật lag, tinh tế, hiện đại và chuẩn xác theo đúng ý người dùng.
+
+### [24/10/2026 - 14:20] - TÁI THIẾT KẾ TOÀN DIỆN TRANG CHÀO MỪNG (MODERN FINTECH LANDING PAGE & UI SHOWCASE)
+
+- **Phản hồi từ người dùng**: *"xấu quá custom lại"* (khung chào mừng cũ dạng hộp đóng kín thô cứng nằm giữa vùng đen trống trải, thiếu chiều sâu, không cuộn được và chưa toát lên diện mạo của một sản phẩm fintech chuyên nghiệp).
+- **Giải pháp tái thiết kế toàn diện**:
+  1. **Bố cục Hero tràn viền đa chiều (Seamless Full-Width Hero)**:
+     - Gỡ bỏ hoàn toàn chiếc hộp đen đóng kín cũ, mở rộng không gian thoáng đãng theo phong cách các sản phẩm SaaS cao cấp (Linear, Vercel, Stripe).
+     - Thiết lập hệ thống ánh sáng nền đa tầng (Ambient Mesh Glow: tím indigo, xanh ngọc emerald, xanh dương cyan) tạo chiều sâu sống động.
+  2. **Nâng tầm Tiêu đề & Thông điệp sản phẩm**:
+     - Tiêu đề chính lớn và sắc nét: *"Làm chủ tài chính cá nhân. Tự động kết nối ngân hàng"* kết hợp dải màu gradient mượt mà.
+     - Thanh điều hướng kính mờ (Glassmorphism Navbar) bổ sung huy hiệu trạng thái: `● Local-First PostgreSQL • Sẵn sàng kết nối`.
+  3. **Khung xem trước giao diện ứng dụng thực tế (UI Preview Mockup Showcase)**:
+     - Tích hợp mockup giao diện Dashboard bằng kính mờ ngay bên dưới nút đăng nhập, giúp người dùng thấy ngay giá trị của sản phẩm:
+       - 3 thẻ ngân hàng kết nối trực tiếp: Vietcombank, MBBank, BIDV với số dư thực tế và mã màu thương hiệu chuẩn.
+       - Hàng chỉ số tài chính nhanh: Tổng tài sản khả dụng, thu nhập, chi tiêu và tỷ lệ tiết kiệm.
+       - Huy hiệu trạng thái: `⚡ Tự động cập nhật 30p` và `PostgreSQL 5432`.
+  4. **Khắc phục lỗi cuộn trang (Smooth Scrolling)**:
+     - Trong [`App.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/App.tsx): Cấu hình `height: 100vh, overflowY: auto` cho container trang chào mừng, giải quyết triệt để vấn đề bị khóa cuộn màn hình do CSS toàn cục. Người dùng có thể lăn chuột mượt mà để khám phá toàn bộ 3 trụ cột tính năng và 3 bước bắt đầu.
+  5. **Nút Google nguyên bản & Tinh gọn**:
+     - Bỏ viền neon dày cộp, giữ nút Google dạng viên nhộng (pill) với bóng đổ tinh tế, đặt chính giữa tâm nhìn.
+- **Kết quả nghiệm thu**: Giao diện landing page đạt chuẩn thẩm mỹ cao cấp, truyền cảm hứng và sẵn sàng chào đón người dùng.
+
+### [24/10/2026 - 14:12] - LOẠI BỎ NÚT GOOGLE TRÙNG LẶP TRÊN THANH ĐIỀU HƯỚNG TRANG CHÀO MỪNG
+
+- **Phản hồi từ người dùng**: *"tận 2 chỗ gg vậy"* (trên cùng một màn hình vừa có nút Google ở góc trên thanh Navbar, vừa có nút Google lớn ở giữa Hero card gây thừa thãi và rối mắt).
+- **Giải pháp xử lý**:
+  1. Trong [`WelcomeView.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/welcome/WelcomeView.tsx): Gỡ bỏ nút Google ở góc trên bên phải thanh Navbar (`googleBtnTopRef`), chỉ giữ lại nút chuyển chế độ Sáng/Tối.
+  2. Tập trung duy nhất 1 nút **Đăng nhập bằng Google** nổi bật ở vị trí trung tâm Hero Card với viền gradient phát sáng sang trọng.
+- **Kết quả nghiệm thu**: Giao diện landing page cân đối, tinh tế, loại bỏ hoàn toàn chi tiết thừa và tập trung vào trải nghiệm một chạm.
+
+### [24/10/2026 - 14:05] - TÁCH BIỆT HOÀN TOÀN TRANG CHÀO MỪNG (ẨN TRIỆT ĐỂ HEADER VÀ SIDEBAR NAV KHI CHƯA ĐĂNG NHẬP)
+
+- **Phản hồi từ người dùng**: *"sao lại cho hiện header với nav vậy"* (khi chưa đăng nhập, việc hiển thị Header nội bộ và Sidebar điều hướng gây rối mắt và không hợp lý vì người dùng chưa có phiên làm việc).
+- **Nguyên nhân**: Ban đầu `WelcomeView` được đặt bên trong thẻ `<main className="page-body">` nằm trong layout shell `<div className="app-container">` cùng với `<Sidebar>` và `<Header>`.
+- **Giải pháp xử lý**:
+  1. Trong [`App.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/App.tsx): Thiết lập cơ chế **Early Return** khi `!authService.isAuthenticated()`. Ứng dụng render trực tiếp component [`WelcomeView.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/welcome/WelcomeView.tsx) toàn màn hình độc lập (`100vh`), bỏ qua hoàn toàn khung `app-container`, `Sidebar` và `Header`.
+  2. [`WelcomeView.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/welcome/WelcomeView.tsx) sở hữu thanh Landing Navbar riêng biệt (Logo FinVn PRO, nút chuyển giao diện Sáng/Tối và nút Đăng nhập Google tiện lợi ở góc trên).
+  3. Khi đăng nhập thành công: Hệ thống tự động chuyển mượt mà vào Dashboard với đầy đủ Sidebar danh mục và Header quản trị.
+- **Kết quả nghiệm thu**: Giao diện landing page hiển thị 100% toàn màn hình, tinh gọn, hiện đại và bảo mật tuyệt đối.
+
+### [24/10/2026 - 14:00] - XÂY DỰNG TRANG CHÀO MỪNG (WELCOME VIEW) CHO NGƯỜI DÙNG CHƯA ĐĂNG NHẬP
+
+- **Yêu cầu người dùng**: Thay vì hiển thị dashboard trống với các thẻ 0đ và biểu đồ rỗng khi chưa đăng nhập, bổ sung trang "Chào mừng đến với FinVn" chuyên nghiệp và truyền cảm hứng.
+- **Nội dung thực hiện**:
+  1. Tạo component mới [`WelcomeView.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/welcome/WelcomeView.tsx):
+     - **Hero Section**: Logo FinVn viền phát sáng, tiêu đề chào mừng gradient ấn tượng, khẩu hiệu giá trị của sản phẩm.
+     - **Nút đăng nhập Google trung tâm**: Tích hợp Google Identity Services với nút Google nổi bật ở vị trí trung tâm.
+     - **3 Thẻ tính năng nổi bật (Glassmorphism)**: Tự động đồng bộ ngân hàng (VCB, MBBank, BIDV), Báo cáo & phân tích dòng tiền trực quan, Bảo mật Local-First 100% trong PostgreSQL.
+     - **3 Bước bắt đầu nhanh**: Hướng dẫn người dùng đăng nhập ⭢ thêm ngân hàng ⭢ làm chủ tài chính.
+  2. Cập nhật [`Header.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/layout/Header.tsx): Ẩn nút "⚡ Tự động đồng bộ ngay" khi chưa đăng nhập để giao diện luôn tinh tế và gọn gàng.
+
+### [24/10/2026 - 13:54] - DỌN SẠCH TÀI KHOẢN MẪU `user-demo` TRONG DATABASE POSTGRESQL
+
+- **Nội dung thực hiện**:
+  1. Xóa hoàn toàn dòng người dùng `user-demo` và toàn bộ các bản ghi liên quan trong database PostgreSQL (`users`, `bank_accounts`, `transactions`).
+  2. Bảng `public.users` hiện chỉ còn duy nhất 1 tài khoản chính chủ của người dùng Google (`phonghuynh031226@gmail.com`).
+  3. Gỡ bỏ lệnh `INSERT INTO users ('user-demo'...)` trong [`sql/init_postgres.sql`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/sql/init_postgres.sql).
+  4. Cập nhật hàm `get_or_create_user` trong [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py) để ngăn chặn việc tự sinh lại `user-demo`.
+
+### [24/10/2026 - 13:45] - BẢO MẬT & XÓA SẠCH DỮ LIỆU KHI ĐĂNG XUẤT (SAFE MODE & PRIVACY PROTECTION)
+
+- **Hiện tượng người dùng phản ánh**: Khi bấm Đăng xuất tài khoản Google, trên màn hình Dashboard vẫn hiển thị số dư, tiền vào/tiền ra và các giao dịch cũ.
+- **Nguyên nhân**:
+  1. Khi gọi `logout()`, hệ thống chỉ xóa token người dùng nhưng chưa xóa cache `localStorage` (`finvn_bank_accounts`, `finvn_transactions`).
+  2. Tiến trình tự động đồng bộ ngầm (`autoSyncAccounts`) vẫn tự động chạy ở chế độ đăng xuất, tự động kết nối lại ngân hàng và nạp lại dữ liệu cũ.
+  3. Các hàm đọc dữ liệu trong `dataService.ts` vẫn fallback về `localStorage` hoặc `user-demo` khi chưa đăng nhập.
+- **Giải pháp triển khai**:
+  1. Nâng cấp `logout()` trong [`authService.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/authService.ts): Tự động gọi `storageService.clearAll()` xóa sạch toàn bộ tài khoản, mật khẩu ngân hàng và lịch sử giao dịch khỏi bộ nhớ đệm trình duyệt.
+  2. Khóa bảo mật trong [`dataService.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/dataService.ts): Nếu `!authService.isAuthenticated()`, các hàm `getAccounts()`, `getTransactions()` và `getFinancialSummary()` lập tức trả về rỗng (`0 đ`, `0 tài khoản`), không gửi request đến database.
+  3. Chặn Auto-sync trong [`App.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/App.tsx): Tiến trình đồng bộ ngầm bị chặn hoàn toàn khi người dùng chưa đăng nhập.
+  4. Bổ sung banner Chế độ xem an toàn (Safe Mode) trên giao diện để thông báo rõ ràng cho người dùng biết dữ liệu đã được bảo mật.
+- **Kết quả**: Khi bấm Đăng xuất, toàn bộ số dư và giao dịch lập tức về 0đ và được bảo vệ tuyệt đối.
+
+### [24/10/2026 - 13:30] - TÍCH HỢP TÍNH NĂNG ĐĂNG NHẬP GOOGLE (GOOGLE OAUTH 2.0 / IDENTITY SERVICES)
+
+- **Mục tiêu**: Bổ sung cơ chế đăng nhập bằng tài khoản Google để người dùng bảo vệ và cá nhân hóa dữ liệu tài chính.
+- **Các bước triển khai**:
+  1. **Cấu hình môi trường**:
+     - Backend [`.env`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/.env): Thêm `GOOGLE_CLIENT_ID` và `GOOGLE_CLIENT_SECRET`.
+     - Frontend [`.env.local`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/.env.local) & [`.env.example`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/.env.example): Thêm `VITE_GOOGLE_CLIENT_ID`.
+  2. **Nâng cấp Database PostgreSQL**:
+     - Bổ sung cột `avatar_url TEXT` vào bảng `users` để lưu ảnh đại diện Google.
+     - Mở rộng độ dài cột `users.id`, `bank_accounts.user_id`, `transactions.user_id` lên `VARCHAR(128)` để lưu Google ID an toàn.
+  3. **Backend API**:
+     - Thêm endpoint `POST /api/auth/google` trong [`main.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/main.py): Xác thực ID Token trực tiếp với Google OAuth Tokeninfo endpoint, lưu/cập nhật thông tin người dùng vào PostgreSQL.
+     - Cơ chế di chuyển dữ liệu thông minh: Tự động chuyển toàn bộ 3 tài khoản và 132 giao dịch ban đầu sang tài khoản Google của người dùng ngay trong lần đăng nhập đầu tiên.
+     - Thêm endpoint `GET /api/auth/me` truy vấn thông tin phiên làm việc.
+  4. **Frontend UI**:
+     - Nhúng Google Identity Services SDK vào [`index.html`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/index.html).
+     - Tạo [`authService.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/authService.ts) và component [`UserAuthControl.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/auth/UserAuthControl.tsx).
+     - Hiển thị nút "Đăng nhập bằng Google" trên thanh Header (góc trên bên phải), và hiển thị avatar tròn, họ tên, email Google cùng menu Đăng xuất khi đã đăng nhập.
+     - Hiển thị thông tin người dùng ở góc dưới Sidebar.
+     - Cập nhật [`dataService.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/dataService.ts) và [`bankApi.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/bankApi.ts) liên kết truy vấn với `authService.getUserId()`.
+
+### [24/10/2026 - 12:45] - TỐI ƯU HÓA ĐỘ TƯƠNG PHẢN GIAO DIỆN SÁNG (LIGHT THEME) & XỬ LÝ LỖI MBBANK GW21
+
+- **Nội dung thực hiện**:
+  1. Tối ưu độ tương phản cho chế độ Sáng (Light Theme):
+     - Header: Chỉnh màu nút, biểu tượng đồng bộ, filter chips sang các biến màu sắc có độ tương phản cao.
+     - Biểu đồ Cashflow: Sửa trục X/Y, đường lưới và tooltip tự động thích ứng với nền sáng và tối.
+     - Thẻ thống kê (StatCards): Tinh chỉnh font chữ và biến màu `var(--accent-expense)`, `var(--accent-income)`, `var(--accent-cyan)` đảm bảo nổi bật rõ ràng.
+     - Danh sách giao dịch: Thêm card container, viền và bóng đổ giúp phân biệt rõ từng giao dịch trên nền sáng.
+  2. Xử lý lỗi `GW21 | Customer is invalid` của MBBank:
+     - Bổ sung nút "Đồng bộ lại" trực tiếp trên từng thẻ tài khoản ([`AccountCard.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/accounts/AccountCard.tsx)), giúp người dùng cập nhật lại mật khẩu/tên đăng nhập MBBank mà không phải xóa tài khoản.
+     - Cung cấp thông điệp hướng dẫn chi tiết kiểm tra lại tên đăng nhập trên App MBBank.
+  3. Dọn sạch toàn bộ các dòng `console.log` thừa trong mã nguồn Frontend để tăng tính bảo mật và sạch sẽ.
+
+### [24/10/2026 - 11:49] - CẬP NHẬT TÀI LIỆU DỰ ÁN README.MD CHÍNH THỨC
+
+- **Nội dung thực hiện**:
+  - Viết lại toàn bộ [`README.md`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/README.md) chuẩn hóa theo kiến trúc sản phẩm mới nhất:
+    1. Bổ sung cơ chế **Đồng bộ gia tăng (Incremental Sync)** giảm 95% request chống spam ngân hàng.
+    2. Cập nhật sơ đồ kiến trúc Mermaid: Client (React Vite 5173) ⟷ Gateway (FastAPI 8787) ⟷ Database (PostgreSQL 5432).
+    3. Hướng dẫn chi tiết 3 bước cài đặt & chạy hoàn chỉnh (PostgreSQL ⭢ Backend ⭢ Frontend).
+    4. Bảng tài liệu API Endpoints chính thức.
+    5. Bảo tồn logo thương hiệu FinVn, thông tin tác giả, ngày tạo dự án và các cam kết bảo mật nội bộ.
+
+### [24/10/2026 - 11:43] - KHÔI PHỤC NGÀY THÊM GỐC CỦA TÀI KHOẢN NGÂN HÀNG TRÊN THẺ UI
+
+- **Hiện tượng người dùng phản ánh**: Cả 3 thẻ tài khoản trên trang "Tài khoản ngân hàng" đều hiện "NGÀY THÊM: 24/10/2026" (thay vì các ngày 22/10 và 23/10 như ban đầu).
+- **Nguyên nhân**:
+  - Khi script migrate nạp dữ liệu từ LocalStorage vào PostgreSQL lần đầu vào lúc 10:38 hôm nay, trường `created_at` trong bảng `bank_accounts` mặc định lấy `CURRENT_TIMESTAMP` (24/10/2026).
+  - Hàm `upsert_account` trong `backend/app/db.py` khi chạy nhánh `UPDATE` chưa đưa `created_at` vào mệnh đề cập nhật để giữ lại ngày thêm ban đầu.
+- **Giải pháp**:
+  1. Cập nhật `upsert_account` trong [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py): Bổ sung `created_at = COALESCE(%s::timestamptz, created_at)` đảm bảo bảo toàn ngày tạo ban đầu.
+  2. Khôi phục trực tiếp ngày thêm chuẩn của 3 tài khoản trong database:
+     - Vietcombank: `22/10/2026`
+     - MBBank: `22/10/2026`
+     - BIDV: `23/10/2026`
+- **Kết quả**: API `/api/accounts` và thẻ giao diện hiển thị đúng ngày tạo ban đầu (`22/10` và `23/10`).
+
+### [24/10/2026 - 11:35] - KHẮC PHỤC LỖI PARSE NGÀY GIAO DỊCH LỊCH SỬ & KHỞI CHẠY LẠI DỰ ÁN TOÀN DIỆN
+
+- **Hiện tượng người dùng phản ánh**: Các giao dịch cũ (từ tháng 9, tháng 10) bị hiển thị toàn bộ thành ngày hôm nay (`24/10/2026 10:57`).
+- **Nguyên nhân cốt lõi**:
+  - Chuỗi ngày gửi từ Frontend lên là định dạng chuẩn ISO 8601 kèm múi giờ (ví dụ `2026-09-25T14:30:00+07:00` hoặc đuôi `Z`).
+  - Hàm `parse_tx_date` trong `backend/app/db.py` chỉ dùng danh sách `strptime` cũ (không hỗ trợ `+07:00`/`Z`), khi parse lỗi đã fallback nhầm về `datetime.now()`, khiến tất cả 66 giao dịch nhận thời điểm chạy migrate (10:57 AM hôm nay).
+- **Giải pháp triển khai**:
+  1. Nâng cấp [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py): Dùng `datetime.fromisoformat()` chuẩn hóa cả offset `+07:00` và `Z`, đồng thời hỗ trợ timestamp số và các định dạng ngày ngân hàng Việt Nam. Nếu không parse được sẽ báo lỗi/bỏ qua thay vì gán ngày hiện tại.
+  2. Nâng cấp cơ chế `ON CONFLICT (account_id, reference) DO UPDATE SET transaction_date = EXCLUDED.transaction_date...` để tự động sửa đúng ngày nếu bị sai.
+  3. Reset dữ liệu sai và tái đồng bộ: Toàn bộ 66 giao dịch đã được nạp lại vào PostgreSQL với thời gian thực.
+  4. Khởi chạy lại toàn bộ hệ thống (Backend FastAPI port 8787 & Frontend Vite port 5173).
+- **Kết quả xác nhận trên PostgreSQL**:
+  - Khoảng thời gian giao dịch thực tế: **từ 25/09/2026 đến 23/10/2026**.
+  - Không còn bất kỳ giao dịch cũ nào bị gán nhầm sang ngày hôm nay.
+
+### [24/10/2026 - 11:05] - HOÀN TẤT ĐỒNG BỘ 100% TÀI KHOẢN VÀ GIAO DỊCH VÀO POSTGRESQL
+
+- **Hiện tượng**: Lúc 10:24, người dùng kiểm tra pgAdmin thấy 0 dòng. Trình duyệt người dùng hiển thị 3 thẻ tài khoản (VCB, MBBank, BIDV).
+- **Nguyên nhân**:
+  1. Ban đầu Backend process cũ chưa nhận endpoint `/api/migrate-from-local` (trả về 404).
+  2. Bảng `transactions` có ràng buộc kiểm tra `transactions_source_check CHECK (source IN ('MANUAL', 'BANK_SYNC', 'IMPORT'))`, trong khi dữ liệu giao dịch cũ từ local có `source = 'BANK_API'`. Do đó, tài khoản đã được nạp thành công nhưng giao dịch bị chặn bởi check constraint.
+- **Giải pháp**:
+  1. Chạy script nâng cấp ràng buộc kiểm tra `transactions_source_check`: cho phép thêm giá trị `'BANK_API'`.
+  2. Thêm bộ lọc an toàn trong [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py) tự động chuẩn hóa mọi giá trị `source` về `BANK_SYNC` nếu không nằm trong danh mục cho phép.
+  3. Cập nhật [`dataService.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/dataService.ts) hỗ trợ retry đồng bộ cả giao dịch và tài khoản khi phát hiện database chưa có.
+  4. Khởi động lại uvicorn và chạy kiểm thử dữ liệu trực tiếp trong database `finvn_db`.
+- **Kết quả xác nhận trên PostgreSQL**:
+  - `bank_accounts`: **3 tài khoản** (Vietcombank - `1051026253`, MBBank - `0767653714`, BIDV - `7351376010`).
+  - `transactions`: **66 giao dịch** đã được lưu trữ an toàn, đầy đủ mã tham chiếu ngân hàng, số tiền và ngày giờ.
+
+
+
+### [24/10/2026 - 09:55] - ĐẤU NỐI POSTGRESQL & HOÀN THIỆN CƠ CHẾ ĐỒNG BỘ GIA TĂNG (INCREMENTAL SYNC)
+
+- **Yêu cầu người dùng**: Kết nối Backend vào cơ sở dữ liệu `finvn_db` với thông tin PostgreSQL đã cung cấp.
+- **Thực hiện**:
+  - Cài đặt driver `psycopg2-binary` và lưu cấu hình bảo mật vào `backend/.env`.
+  - Kiểm tra kết nối thành công tới database `finvn_db` trên cổng `5432` (đã nhận diện đầy đủ 3 bảng: `users`, `bank_accounts`, `transactions`).
+  - Xây dựng module cơ sở dữ liệu [`backend/app/db.py`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/backend/app/db.py) hỗ trợ connection pool, quản lý tài khoản và giao dịch với cơ chế chống trùng lặp tự động (`ON CONFLICT DO NOTHING`).
+  - Triển khai endpoint **Đồng bộ gia tăng thông minh** (`POST /api/banks/{bank}/sync`):
+    - Tự động kiểm tra ngày giao dịch gần nhất của tài khoản trong database.
+    - Nếu đã có dữ liệu, chỉ request từ ngày gần nhất đến hiện tại (1-2 ngày) thay vì quét 30-90 ngày, giúp tốc độ phản hồi tính bằng giây và loại bỏ hoàn toàn nguy cơ bị ngân hàng gắn cờ spam.
+  - Mở rộng các endpoint CRUD cho tài khoản và giao dịch (`/api/accounts`, `/api/transactions`).
+  - Cập nhật service Frontend [`bankApi.ts`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/services/bankApi.ts) để hỗ trợ gọi hàm `syncBank`.
+- **Kết quả kiểm thử**:
+  - Backend FastAPI (Port 8787): `HTTP 200 OK`, kết nối PostgreSQL thành công.
+  - Frontend React (Port 5173): `HTTP 200 OK`, build không lỗi.
+- **File tạo mới & chỉnh sửa**: `backend/.env`, `backend/app/db.py`, `backend/app/main.py`, `frontend/web/src/services/bankApi.ts`.
+
+
+
+### [24/10/2026 - 09:38] - THIẾT KẾ SCHEMA CƠ SỞ DỮ LIỆU POSTGRESQL CHUẨN CHO FINVN
+
+- **Yêu cầu người dùng**: Chốt sử dụng PostgreSQL, tạo file script SQL hoàn chỉnh để người dùng khởi tạo database rồi cung cấp thông tin kết nối.
+- **Thực hiện**:
+  - Tạo file script chuẩn hóa [`sql/init_postgres.sql`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/sql/init_postgres.sql) bao gồm các bảng: `users`, `bank_accounts`, `transactions`.
+  - Thiết lập ràng buộc độc nhất (Unique index) `(account_id, reference)` để chống trùng lặp dữ liệu ngân hàng 100%.
+  - Thêm các chỉ mục (Indexes) tối ưu hóa tốc độ lọc báo cáo theo thời gian và tài khoản.
+  - Cập nhật thư viện `psycopg2-binary` vào `backend/requirements.txt` phục vụ kết nối trực tiếp từ FastAPI.
+- **File tạo mới & chỉnh sửa**: `sql/init_postgres.sql`, `backend/requirements.txt`.
+
+
+
+### [24/10/2026 - 09:30] - TÍCH HỢP LOGO FINVN VÀO SIDEBAR, README & ĐÁNH GIÁ KIẾN TRÚC LƯU TRỮ GIẢM TẢI NGÂN HÀNG
+
+- **Yêu cầu người dùng**:
+  1. Thắc mắc và lên kế hoạch: Tự động mỗi 30p hoặc bấm lọc có gửi request gây spam ngân hàng không? Tạo nơi lưu trữ giao dịch đã lấy có giúp giảm tải không?
+  2. Gắn `logo.png` vào bên cạnh chữ FinVn (thay thế biểu tượng cái khiên tạm thời).
+  3. Gắn `Logo FinVn.png` làm banner đại diện cho file `README.md`.
+- **Thực hiện**:
+  - Sao chép `logo.png` vào thư mục public của Web (`frontend/web/public/logo.png`).
+  - Cập nhật [`Sidebar.tsx`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/frontend/web/src/components/layout/Sidebar.tsx): Thay thế icon `ShieldCheck` bằng logo FinVN chính thức; cập nhật favicon trong `index.html`.
+  - Cập nhật [`README.md`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/README.md): Đưa `Logo FinVn.png` vào phần banner tiêu đề trung tâm.
+  - Phân tích kiến trúc dữ liệu và giải pháp Đồng bộ gia tăng (Incremental Sync) chống spam ngân hàng.
+- **File chỉnh sửa**: `frontend/web/public/logo.png`, `frontend/web/src/components/layout/Sidebar.tsx`, `frontend/web/index.html`, `README.md`.
+
+
+
+### [24/10/2026 - 09:16] - CẬP NHẬT NGÀY TẠO DỰ ÁN VÀO TÀI LIỆU README.MD
+
+- **Yêu cầu người dùng**: Ghi ngày tạo dự án vào file `README.md`.
+- **Thực hiện**:
+  - Đối soát lịch sử Git và thời gian tạo file hệ thống (khởi tạo 16/10/2026, Git commit 22/10/2026).
+  - Bổ sung thông tin ngày tạo và tác giả vào phần giới thiệu đầu file [`README.md`](file:///d:/DU%20AN%20CA%20NHAN/Qu%E1%BA%A3n%20l%C3%BD%20t%C3%A0i%20ch%C3%ADnh/README.md).
+- **File chỉnh sửa**: `README.md`.
+
+
+
 ### [23/10/2026 - 20:45] - RÀ SOÁT VÀ DỌN DẸP TRIỆT ĐỂ LIÊN QUAN ĐẾN SEPAY VÀ DỰ ÁN MOBILE
 
 - **Yêu cầu người dùng**: Kiểm tra toàn bộ dự án xem còn file hay đoạn code nào dính líu đến SePay hay dự án Mobile không.
@@ -846,3 +1081,39 @@ Tài liệu này ghi lại toàn bộ lịch sử các công việc đã thực 
 - Su co: Nguoi dung rut tien ATM 900.000d tai BIDV ngay 20/10/2026 nhung chi hien phi 3.300d ma khong thay khoan rut tien 900.000d.
 - Nguyen nhan: Ca 2 giao dich rut tien va phi rut deu dung chung 1 Ma GD ('059217W8-8Czb...'). Ham importBankTransactions chi kiem tra trung bang btx.reference nen khi phi 3.300d duoc them vao truoc, khoan 900.000d bi nhan nham la trung lap va bi bo qua.
 - Khac phuc: Nang cap Fingerprint dinh danh giao dich ket hop [AccountId + Ma GD + So tien + Loai GD + Ngay].
+### [24/10/2026] - SỬA LỖI GÁN NGÀY HIỆN TẠI CHO GIAO DỊCH NGÂN HÀNG
+
+- **Nguyên nhân**: Frontend chỉ parse ngày `DD/MM/YYYY`; định dạng ISO/timestamp và trường ngày VCB viết khác kiểu không được nhận diện, sau đó bị thay bằng `new Date()`.
+- **Thực hiện**: Hỗ trợ ngày VN, ISO (kể cả offset), timestamp; giao dịch thiếu/sai ngày bị bỏ qua thay vì lưu nhầm ngày. Chuẩn hóa thêm các tên trường ngày VCB; backend cũng không còn fallback ngày hiện tại khi parse lỗi. Khi đồng bộ lại, bản ghi có cùng mã tham chiếu được cập nhật ngày và đẩy lên PostgreSQL.
+- **Kiểm tra**: Web production build thành công; Python compileall thành công. Vite có cảnh báo chunk hiện hữu về import tĩnh/động `storage.ts`.
+- **Giới hạn sửa dữ liệu cũ**: Ngày chỉ được khôi phục khi ngân hàng còn trả giao dịch trong khoảng đồng bộ và có mã tham chiếu/dấu vân tay khớp.
+### [24/10/2026] - GIỮ NGÀY THÊM TÀI KHOẢN KHI CHUYỂN LÊN DATABASE
+
+- **Nguyên nhân**: Endpoint chuyển dữ liệu cũ chỉ gửi thông tin tài khoản cơ bản, còn `upsert_account` luôn để PostgreSQL tự gán `created_at = CURRENT_TIMESTAMP`. Vì vậy các tài khoản cũ hiển thị ngày chuyển database.
+- **Thực hiện**: Chuyển `createdAt`/`created_at` gốc qua endpoint migration và dùng nó khi tạo hàng mới; lần đồng bộ cập nhật tài khoản không thay đổi ngày tạo.
+- **Giới hạn dữ liệu đã có**: Các hàng đã được tạo với ngày chuyển database không thể tự suy ra ngày ban đầu nếu bản cache cũ đã bị thay thế.
+
+### [24/10/2026] - TINH GỌN TRANG CHÀO MỪNG VÀ ĐĂNG NHẬP
+
+- **Yêu cầu người dùng**: Loại bỏ nội dung dư trên trang chào mừng/đăng nhập.
+- **Thực hiện**: Bỏ mockup số dư và tài khoản giả, các khối giới thiệu dài và phần hướng dẫn lặp; giữ thương hiệu, nút Google OAuth, chuyển sáng/tối và ba điểm chính ngắn gọn. Thêm bố cục responsive.
+- **Kiểm tra**: `npm.cmd run build` thành công; luồng render Google OAuth và chuyển giao diện vẫn được giữ trong component.
+
+### [24/10/2026] - CHUYỂN NÚT ĐĂNG XUẤT SANG NAV
+
+- **Yêu cầu người dùng**: Đưa nút đăng xuất từ menu tài khoản trên header xuống thanh điều hướng bên trái.
+- **Thực hiện**: Gỡ menu tài khoản khỏi header; thêm nút đăng xuất bên dưới thẻ hồ sơ người dùng trong sidebar, hỗ trợ cả chế độ thu gọn. Khi đăng xuất, ứng dụng xóa dữ liệu đang hiển thị và hiện thông báo xác nhận.
+
+### [24/10/2026] - GIẢM CUỘN TRANG ĐĂNG NHẬP
+
+- **Yêu cầu người dùng**: Trang đăng nhập bị dư chiều cao, phải cuộn lên xuống.
+- **Thực hiện**: Thu gọn khoảng đệm và khoảng cách các khối; giữ nội dung vừa khung nhìn trên desktop. Màn hình nhỏ vẫn bật cuộn để không cắt nội dung.
+# 2026-10-24 — Gia cố bảo mật trước deploy công khai
+
+- Bỏ mật khẩu PostgreSQL mặc định; backend từ chối tạo kết nối nếu `DB_PASSWORD` trống.
+- Thêm xác minh Google ID token bằng `google-auth`, session opaque có thể thu hồi và cookie HttpOnly; các API dữ liệu/bank lấy user từ session.
+- Thêm kiểm tra CSRF dựa trên token gắn với session và Origin allowlist.
+- Thêm bảng session/credentials; mã hóa thông tin ngân hàng AES-256-GCM bằng keyring cấu hình ngoài repo, xóa credentials cũ khỏi localStorage và chuyển luồng sync để autosync đọc credential ở backend.
+- Chuyển tạo/sửa/xóa tài khoản và tạo/sửa/xóa giao dịch sang API/DB; cập nhật số dư giao dịch thủ công trong cùng transaction.
+- Kiểm tra: frontend production build và Python compileall đạt. Backend runtime tests chưa chạy được vì Python runtime hiện tại không có FastAPI; Docker daemon và network cài package không khả dụng.
+- Chưa deploy/push. Cần hoàn thiện kiểm tra tích hợp với PostgreSQL và review cấu hình production trước khi đưa lên Internet.

@@ -72,6 +72,14 @@
   --text-secondary: #334155;
   --text-muted: #64748b;
 
+  --accent-income: #059669;
+  --accent-income-glow: rgba(5, 150, 105, 0.2);
+  --accent-expense: #e11d48;
+  --accent-expense-glow: rgba(225, 29, 72, 0.2);
+  --accent-primary: #4f46e5;
+  --accent-primary-hover: #4338ca;
+  --accent-cyan: #0891b2;
+
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
   --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
@@ -430,4 +438,325 @@ body::after {
 
 .pulse-live {
   animation: pulseGlow 2s infinite;
+}
+
+/* Compact sign-in / welcome page */
+/* ==========================================================================
+   FINVN WELCOME / LANDING PAGE - ZERO SCROLL COMPACT PERFECTION
+   ========================================================================== */
+
+.welcome-page {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden !important;
+  background:
+    radial-gradient(ellipse at 50% 12%, rgba(99, 102, 241, 0.16) 0%, rgba(16, 185, 129, 0.08) 36%, transparent 65%),
+    var(--bg-primary);
+}
+
+.welcome-ambient-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, rgba(99, 102, 241, 0.1) 40%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.welcome-nav {
+  height: 56px;
+  flex: 0 0 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(20px, 4vw, 48px);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  position: relative;
+  z-index: 10;
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.welcome-brand img {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #fff;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+}
+
+.welcome-pro {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--accent-primary-gradient);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.welcome-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.welcome-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.welcome-theme-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.welcome-theme-button:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.welcome-main {
+  width: min(100% - 32px, 720px);
+  flex: 1;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-copy {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--accent-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.welcome-copy h1 {
+  max-width: 680px;
+  font-size: clamp(2rem, 4.2vw, 3.1rem);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  color: var(--text-primary);
+}
+
+.welcome-gradient-text {
+  display: block;
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcome-description {
+  max-width: 520px;
+  margin: 8px auto 14px auto;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.welcome-login-card {
+  width: min(100%, 460px);
+  padding: 16px 24px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.45), 0 0 24px rgba(99, 102, 241, 0.12);
+}
+
+.welcome-login-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+}
+
+.welcome-card-header h2 {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.welcome-card-header p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.welcome-google-button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.welcome-banks-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.welcome-bank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.welcome-bank-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.welcome-privacy-note {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.welcome-highlights {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin-top: 2px;
+}
+
+.welcome-highlights li {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 650;
+  transition: all 0.2s ease;
+}
+
+.welcome-highlights li:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.welcome-highlight-icon {
+  color: var(--accent-income);
+  display: inline-flex;
+}
+
+.welcome-footer {
+  flex: 0 0 auto;
+  padding: 6px 20px 10px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  text-align: center;
+  border-top: 1px solid var(--border-subtle);
+  position: relative;
+  z-index: 10;
+}
+
+.welcome-footer span {
+  padding: 0 6px;
+  color: var(--border-hover);
+}
+
+@media (max-width: 640px) {
+  .welcome-status-badge {
+    display: none;
+  }
+  .welcome-highlights {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .welcome-copy h1 {
+    font-size: 2rem;
+  }
 }

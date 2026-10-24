@@ -99,19 +99,16 @@ export const storageService = {
 
   getBankCredentials(): Record<string, { username: string; password?: string; browserId?: string }> {
     try {
-      const raw = localStorage.getItem('finvn_bank_creds');
-      return raw ? JSON.parse(raw) : {};
+      localStorage.removeItem('finvn_bank_creds');
+      return {};
     } catch {
       return {};
     }
   },
 
   saveBankCredentials(creds: Record<string, { username: string; password?: string; browserId?: string }>): void {
-    try {
-      localStorage.setItem('finvn_bank_creds', JSON.stringify(creds));
-    } catch (e) {
-      console.error('Error saving bank credentials to localStorage', e);
-    }
+    void creds;
+    localStorage.removeItem('finvn_bank_creds');
   },
 
   saveAccountCredential(accountId: string, cred: { username: string; password?: string; browserId?: string }): void {

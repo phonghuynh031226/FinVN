@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Receipt,
   CreditCard,
@@ -6,11 +6,13 @@ import {
   PieChart,
   Sun,
   Moon,
-  ShieldCheck,
   ChevronRight,
   ChevronLeft,
+  LogOut,
   LucideIcon,
 } from 'lucide-react';
+import { authService } from '../../services/authService';
+import { UserProfile } from '../../types/user';
 
 export type TabKey = 'dashboard' | 'transactions' | 'accounts';
 
@@ -24,6 +26,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -36,9 +39,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   isCollapsed: propCollapsed,
   onToggleCollapse,
+  onLogout,
 }) => {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [isHoverBtn, setIsHoverBtn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(authService.getCurrentUser());
+
+  useEffect(() => {
+    const unsub = authService.subscribe((u) => setCurrentUser(u));
+    return () => unsub();
+  }, []);
 
   const isCollapsed = propCollapsed !== undefined ? propCollapsed : internalCollapsed;
 
@@ -132,15 +142,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               width: '42px',
               height: '42px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+              overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.25)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              background: '#ffffff',
               flexShrink: 0,
             }}
           >
-            <ShieldCheck size={24} color="#ffffff" />
+            <img
+              src="/logo.png"
+              alt="FinVn Logo"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           {!isCollapsed && (
             <div style={{ minWidth: 0 }}>
@@ -154,8 +170,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontWeight: 700,
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    background: 'rgba(99, 102, 241, 0.2)',
-                    color: '#818cf8',
+                    background: 'rgba(99, 102, 241, 0.12)',
+                    color: 'var(--accent-primary)',
                     border: '1px solid rgba(99, 102, 241, 0.3)',
                   }}
                 >
@@ -193,19 +209,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   background: isActive
                     ? 'linear-gradient(90deg, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.05) 100%)'
                     : 'transparent',
-                  color: isActive ? '#818cf8' : 'var(--text-secondary)',
-                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  fontWeight: isActive ? 700 : 500,
                   fontSize: '0.925rem',
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all var(--transition-fast)',
-                  borderLeft: !isCollapsed && isActive ? '3px solid #6366f1' : '3px solid transparent',
+                  borderLeft: !isCollapsed && isActive ? '3px solid var(--accent-primary)' : '3px solid transparent',
                   position: 'relative',
                   overflow: 'hidden',
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                    e.currentTarget.style.background = 'var(--bg-tertiary)';
                     e.currentTarget.style.color = 'var(--text-primary)';
                   }
                 }}
@@ -216,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }
                 }}
               >
-                <Icon size={20} color={isActive ? '#818cf8' : 'currentColor'} style={{ flexShrink: 0 }} />
+                <Icon size={20} color={isActive ? 'var(--accent-primary)' : 'currentColor'} style={{ flexShrink: 0 }} />
                 {!isCollapsed && <span style={{ flex: 1, whiteSpace: 'nowrap' }}>{item.label}</span>}
                 {!isCollapsed && item.badge && (
                   <span
@@ -225,7 +241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       fontSize: '0.65rem',
                       fontWeight: 700,
                       background: 'rgba(16, 185, 129, 0.2)',
-                      color: '#10b981',
+                      color: 'var(--accent-income)',
                       padding: '2px 6px',
                       borderRadius: 'var(--radius-full)',
                       border: '1px solid rgba(16, 185, 129, 0.4)',
@@ -239,6 +255,114 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
         </nav>
+
+        {/* User profile card in sidebar */}
+        {currentUser && (
+          <div style={{ marginBottom: '12px' }}>
+          <div
+            style={{
+              padding: isCollapsed ? '10px 0' : '10px 12px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              gap: '10px',
+            }}
+            title={`${currentUser.full_name} (${currentUser.email})`}
+          >
+            {currentUser.avatar_url ? (
+              <img
+                src={currentUser.avatar_url}
+                alt={currentUser.full_name}
+                referrerPolicy="no-referrer"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                  border: '1.5px solid var(--accent-primary)',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'var(--accent-primary)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  flexShrink: 0,
+                }}
+              >
+                {(currentUser.full_name || 'U')[0].toUpperCase()}
+              </div>
+            )}
+            {!isCollapsed && (
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: '0.825rem',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {currentUser.full_name}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--text-muted)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {currentUser.email}
+                </div>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            aria-label="Đăng xuất"
+            title="Đăng xuất"
+            onClick={() => {
+              authService.logout();
+              onLogout?.();
+            }}
+            style={{
+              width: '100%',
+              marginTop: '8px',
+              padding: isCollapsed ? '10px' : '9px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              gap: '8px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              background: 'rgba(244, 63, 94, 0.08)',
+              color: 'var(--accent-expense)',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+            }}
+          >
+            <LogOut size={16} />
+            {!isCollapsed && 'Đăng xuất'}
+          </button>
+          </div>
+        )}
 
         {/* Theme Switcher Footer */}
         <div

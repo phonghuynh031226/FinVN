@@ -4,12 +4,13 @@ import { getBankInfo } from '../../constants/vietnamBanks';
 import { maskAccountNumber } from '../../utils/currency';
 import { formatDisplayDate } from '../../utils/date';
 import { BankLogo } from './BankLogo';
-import { Edit3, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Edit3, Trash2, Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 interface AccountCardProps {
   account: BankAccount;
   onEdit: (account: BankAccount) => void;
   onDelete: (account: BankAccount) => void;
+  onSync?: (account: BankAccount) => void;
   onQuickUpdate?: (id: string, updates: UpdateBankAccountInput) => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
   account,
   onEdit,
   onDelete,
+  onSync,
   onQuickUpdate,
 }) => {
   const bankInfo = getBankInfo(account.bankName);
@@ -227,6 +229,31 @@ export const AccountCard: React.FC<AccountCardProps> = ({
 
         {/* Nút hành động */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {onSync && (
+            <button
+              onClick={() => onSync(account)}
+              title="Đồng bộ lại hoặc nhập lại mật khẩu Internet Banking"
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.22)',
+                border: 'none',
+                color: '#ffffff',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.38)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.22)')}
+            >
+              <RefreshCw size={13} />
+              <span>Đồng bộ</span>
+            </button>
+          )}
           <button
           onClick={() => onEdit(account)}
           title="Chỉnh sửa thông tin & đổi màu thẻ"

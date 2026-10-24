@@ -18,6 +18,8 @@ import { getDateRangeByPreset } from './utils/date';
 import { dataService } from './services/dataService';
 import { storageService } from './services/storage';
 import { bankApiService } from './services/bankApi';
+import { authService } from './services/authService';
+import { WelcomeView } from './components/welcome/WelcomeView';
 import { Plus, CreditCard, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -71,6 +73,18 @@ export default function App() {
 
   // Fetch Data
   const refreshData = useCallback(async () => {
+    if (!authService.isAuthenticated()) {
+      setAccounts([]);
+      setTransactions([]);
+      setSummary({
+        totalIncome: 0,
+        totalExpense: 0,
+        netAmount: 0,
+        totalBalance: 0,
+      });
+      return;
+    }
+
     try {
       const [accs, txs, sum] = await Promise.all([
         dataService.getAccounts(),
@@ -86,12 +100,18 @@ export default function App() {
     }
   }, [filter, addToast]);
 
+
+
   // Ref để đảm bảo auto-sync chỉ chạy đúng 1 lần khi load app, chống loop render
   const hasAutoSyncedRef = useRef(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
 
   // Auto Sync: force = true để bỏ qua cooldown, silent = true để không hiện popup toast khởi động
   const autoSyncAccounts = useCallback(async (force = false, silent = false) => {
+    if (!authService.isAuthenticated()) {
+      setIsSyncingAll(false);
+      return;
+    }
     try {
       if (force && !silent) {
         setIsSyncingAll(true);
@@ -106,7 +126,26 @@ export default function App() {
 
       await Promise.allSettled(
         accs.map(async (acc) => {
-          const creds = credsMap[acc.id];
+          let creds: { username: string; password?: string; browserId?: string } | undefined = credsMap[acc.id];
+          if (!creds) {
+            creds = Object.values(credsMap).find(
+              (c: any) => c.accountNumber === acc.accountNumber || c.username === acc.accountNumber
+            );
+            if (creds?.username && creds?.password) {
+              storageService.saveAccountCredential(acc.id, creds);
+            }
+          }
+          if (!creds?.password) {
+            const lastSync = acc.lastSyncedAt || 0;
+            if (!force && now - lastSync < COOLDOWN_MS) return;
+            try {
+              await bankApiService.syncSavedAccount(acc.id);
+              anyUpdated = true;
+            } catch (err: any) {
+              if (!silent) addToast('error', `Lỗi đồng bộ ${acc.bankName}: ${err.message || 'không thể đồng bộ'}`);
+            }
+            return;
+          }
           if (!creds?.username || !creds?.password) return;
 
           // Bỏ qua nếu chưa đủ thời gian cooldown (trừ khi force = true)
@@ -172,13 +211,18 @@ export default function App() {
 
             anyUpdated = true;
             totalImportedCount += importRes.importedCount;
-            if (importRes.importedCount > 0) {
-              addToast('info', `⚡ Tự động nạp ${importRes.importedCount} giao dịch mới từ ${acc.bankName}!`);
+            if (importRes.importedCount > 0 || importRes.correctedCount > 0) {
+              addToast('info', `⚡ ${acc.bankName}: thêm ${importRes.importedCount} giao dịch, sửa ngày ${importRes.correctedCount} giao dịch.`);
             }
           } catch (err: any) {
             console.warn(`Tự động đồng bộ ${acc.bankName} tạm hoãn:`, err.message);
             if (!silent) {
-              addToast('error', `Lỗi đồng bộ ${acc.bankName}: ${err.message}`);
+              const msg = err.message || '';
+              const isGW21 = msg.includes('GW21') || msg.includes('Customer is invalid');
+              const displayMsg = isGW21
+                ? `${acc.bankName}: Tên đăng nhập hoặc mật khẩu không chính xác (mã GW21). Vui lòng kiểm tra lại Tên đăng nhập trên App MBBank.`
+                : `Lỗi đồng bộ ${acc.bankName}: ${msg}`;
+              addToast('error', displayMsg);
             }
           }
         })
@@ -202,18 +246,33 @@ export default function App() {
     refreshData();
   }, [refreshData]);
 
+  // Lắng nghe thay đổi trạng thái đăng nhập
+  useEffect(() => {
+    const unsub = authService.subscribe((user) => {
+      if (!user) {
+        setAccounts([]);
+        setTransactions([]);
+        setSummary({ totalIncome: 0, totalExpense: 0, netAmount: 0, totalBalance: 0 });
+      } else {
+        refreshData();
+      }
+    });
+    return () => unsub();
+  }, [refreshData]);
+
   // 2. Tự động đồng bộ ngay khi vừa mở ứng dụng + thiết lập chu kỳ cập nhật định kỳ mỗi 30 phút
   useEffect(() => {
-    // Luôn chạy cập nhật ngay lập tức khi người dùng mở Web
-    if (!hasAutoSyncedRef.current) {
+    // Luôn chạy cập nhật ngay lập tức khi người dùng mở Web (chỉ khi đã đăng nhập)
+    if (!hasAutoSyncedRef.current && authService.isAuthenticated()) {
       hasAutoSyncedRef.current = true;
       autoSyncAccounts(true, false);
     }
 
     // Thiết lập chu kỳ tự động cập nhật ngầm định kỳ mỗi 30 phút (30 * 60 * 1000 ms)
     const intervalId = setInterval(() => {
-      console.log('⏰ [Auto-Sync 30m] Tự động cập nhật số dư & giao dịch định kỳ 30 phút...');
-      autoSyncAccounts(true, true);
+      if (authService.isAuthenticated()) {
+        autoSyncAccounts(true, true);
+      }
     }, 30 * 60 * 1000);
 
     return () => clearInterval(intervalId);
@@ -289,7 +348,17 @@ export default function App() {
         ? accounts.find((a) => a.id === filter.accountId) || accounts[0]
         : accounts[0];
 
-    const creds = storageService.getBankCredentials()[target.id];
+    const credsMap = storageService.getBankCredentials();
+    let creds: { username: string; password?: string; browserId?: string } | undefined = credsMap[target.id];
+    if (!creds) {
+      // Tìm fallback nếu ID tài khoản vừa được cấp từ PostgreSQL
+      creds = Object.values(credsMap).find(
+        (c: any) => c.accountNumber === target.accountNumber || c.username === target.accountNumber
+      ) || Object.values(credsMap)[0];
+      if (creds?.username && creds?.password) {
+        storageService.saveAccountCredential(target.id, creds);
+      }
+    }
     if (creds?.username && creds?.password) {
       addToast('info', `Đang tải giao dịch mới nhất từ ${target.bankName}...`);
       await autoSyncAccounts(true, false);
@@ -348,6 +417,12 @@ export default function App() {
 
   // Titles
   const getTabTitle = () => {
+    if (!authService.isAuthenticated()) {
+      return {
+        title: 'Chào mừng đến với FinVn',
+        subtitle: 'Hệ thống Quản lý Tài chính & Đồng bộ Ngân hàng Thông minh',
+      };
+    }
     switch (currentTab) {
       case 'dashboard':
         return {
@@ -369,6 +444,24 @@ export default function App() {
 
   const { title, subtitle } = getTabTitle();
 
+  // Khi chưa đăng nhập: Hiển thị toàn màn hình Trang Chào Mừng độc lập (KHÔNG hiển thị Header hay Sidebar)
+  if (!authService.isAuthenticated()) {
+    return (
+      <div style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+        <WelcomeView
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLoginSuccess={() => {
+            refreshData();
+            autoSyncAccounts(true, true);
+            addToast('success', 'Đăng nhập thành công! Chào mừng bạn trở lại.');
+          }}
+        />
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -380,6 +473,12 @@ export default function App() {
         onToggleTheme={toggleTheme}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
+        onLogout={() => {
+          setAccounts([]);
+          setTransactions([]);
+          setSummary({ totalIncome: 0, totalExpense: 0, netAmount: 0, totalBalance: 0 });
+          addToast('info', 'Đã đăng xuất an toàn. Dữ liệu tài chính đã được bảo mật.');
+        }}
       />
 
       {/* Main Content Area */}
@@ -398,7 +497,8 @@ export default function App() {
           accounts={accounts}
           filter={filter}
           onFilterChange={setFilter}
-          showFilters={currentTab === 'dashboard' || currentTab === 'transactions'}
+          showFilters={authService.isAuthenticated() && (currentTab === 'dashboard' || currentTab === 'transactions')}
+          isAuthenticated={authService.isAuthenticated()}
         />
 
         <main className="page-body">
@@ -550,6 +650,7 @@ export default function App() {
                         setEditingAccount(a);
                         setAccountModalOpen(true);
                       }}
+                      onSync={(a) => setSyncAccount(a)}
                       onDelete={handleDeleteAccount}
                       onQuickUpdate={handleUpdateAccount}
                     />

@@ -69,7 +69,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
               padding: '8px',
               borderRadius: '12px',
               background: 'rgba(99, 102, 241, 0.12)',
-              color: '#818cf8',
+              color: 'var(--accent-primary)',
             }}
           >
             <Wallet size={20} />
@@ -106,13 +106,13 @@ export const StatCards: React.FC<StatCardsProps> = ({
               padding: '8px',
               borderRadius: '12px',
               background: 'rgba(16, 185, 129, 0.12)',
-              color: '#10b981',
+              color: 'var(--accent-income)',
             }}
           >
             <ArrowDownLeft size={20} />
           </div>
         </div>
-        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981', marginBottom: '8px' }}>
+        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-income)', marginBottom: '8px' }}>
           +{formatVND(summary.totalIncome)}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.785rem', color: 'var(--text-muted)' }}>
@@ -140,13 +140,13 @@ export const StatCards: React.FC<StatCardsProps> = ({
               padding: '8px',
               borderRadius: '12px',
               background: 'rgba(244, 63, 94, 0.12)',
-              color: '#fb7185',
+              color: 'var(--accent-expense)',
             }}
           >
             <ArrowUpRight size={20} />
           </div>
         </div>
-        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fb7185', marginBottom: '8px' }}>
+        <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--accent-expense)', marginBottom: '8px' }}>
           -{formatVND(summary.totalExpense)}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.785rem', color: 'var(--text-muted)' }}>
@@ -176,7 +176,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
               padding: '8px',
               borderRadius: '12px',
               background: isNetPositive ? 'rgba(6, 182, 212, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              color: isNetPositive ? '#06b6d4' : '#ef4444',
+              color: isNetPositive ? 'var(--accent-cyan)' : 'var(--accent-expense)',
             }}
           >
             <TrendingUp size={20} />
@@ -186,7 +186,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
           style={{
             fontSize: '1.75rem',
             fontWeight: 800,
-            color: isNetPositive ? '#06b6d4' : '#ef4444',
+            color: isNetPositive ? 'var(--accent-cyan)' : 'var(--accent-expense)',
             marginBottom: '8px',
           }}
         >
@@ -194,8 +194,8 @@ export const StatCards: React.FC<StatCardsProps> = ({
           {formatVND(summary.netAmount)}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.785rem' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Tỷ lệ tiết kiệm:</span>
-          <span style={{ fontWeight: 700, color: isNetPositive ? '#06b6d4' : '#ef4444' }}>
+          <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Tỷ lệ tiết kiệm:</span>
+          <span style={{ fontWeight: 700, color: isNetPositive ? 'var(--accent-cyan)' : 'var(--accent-expense)' }}>
             {savingsRate}%
           </span>
         </div>
@@ -203,7 +203,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
         <div
           style={{
             width: '100%',
-            height: '4px',
+            height: '5px',
             borderRadius: '9999px',
             backgroundColor: 'var(--border-subtle)',
             marginTop: '6px',
@@ -215,7 +215,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
               width: `${savingsRate}%`,
               height: '100%',
               borderRadius: '9999px',
-              backgroundColor: isNetPositive ? '#06b6d4' : '#ef4444',
+              backgroundColor: isNetPositive ? 'var(--accent-cyan)' : 'var(--accent-expense)',
               transition: 'width 0.5s ease',
             }}
           />

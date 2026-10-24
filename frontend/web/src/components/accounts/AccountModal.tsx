@@ -302,9 +302,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             style={{
               padding: '14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(245, 158, 11, 0.15)',
+              background: 'rgba(245, 158, 11, 0.12)',
               border: '1px solid rgba(245, 158, 11, 0.35)',
-              color: '#fbbf24',
+              color: '#d97706',
               fontSize: '0.825rem',
               marginBottom: '18px',
               lineHeight: 1.5,
@@ -325,11 +325,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({
         {errorMsg && !errorMsg.includes('chưa bật tính năng đăng nhập') && !errorMsg.includes('019') && (
           <div
             style={{
-              padding: '12px',
+              padding: '12px 14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#fb7185',
+              background: 'rgba(225, 29, 72, 0.1)',
+              border: '1px solid rgba(225, 29, 72, 0.3)',
+              color: 'var(--accent-expense)',
+              fontWeight: 600,
               fontSize: '0.85rem',
               marginBottom: '18px',
             }}
@@ -399,7 +400,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 />
               </div>
 
-              <div style={{ marginTop: '14px', fontSize: '0.8rem', color: countdown > 0 ? '#a5b4fc' : '#fb7185' }}>
+              <div style={{ marginTop: '14px', fontSize: '0.8rem', color: countdown > 0 ? 'var(--accent-primary)' : 'var(--accent-expense)', fontWeight: 600 }}>
                 {countdown > 0 ? (
                   <span>
                     Mã có hiệu lực trong: <strong>{Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}</strong>
@@ -417,7 +418,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   padding: '12px',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
+                  color: 'var(--accent-income)',
+                  fontWeight: 600,
                   fontSize: '0.825rem',
                   display: 'flex',
                   alignItems: 'center',
@@ -615,12 +617,13 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               <div
                 style={{
                   marginTop: '10px',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  background: bankName === 'BIDV' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                  border: `1px solid ${bankName === 'BIDV' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`,
-                  color: bankName === 'BIDV' ? '#34d399' : '#a5b4fc',
-                  fontSize: '0.75rem',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  background: bankName === 'BIDV' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(99, 102, 241, 0.12)',
+                  border: `1px solid ${bankName === 'BIDV' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(99, 102, 241, 0.3)'}`,
+                  color: bankName === 'BIDV' ? 'var(--accent-income)' : 'var(--accent-primary)',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
@@ -652,7 +655,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   padding: '10px 12px',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
+                  color: 'var(--accent-income)',
+                  fontWeight: 600,
                   fontSize: '0.8rem',
                   display: 'flex',
                   alignItems: 'center',

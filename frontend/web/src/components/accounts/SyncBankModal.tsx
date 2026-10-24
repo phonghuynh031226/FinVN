@@ -75,47 +75,18 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
 
   // Hoàn tất tải giao dịch và lưu dữ liệu
   const finishSync = async (activeBrowserId: string, currentBalance: number, targetAccountNo?: string) => {
-    setStatusMessage('Đang tải lịch sử giao dịch thu/chi...');
     const provider = getBankProvider(account.bankName);
-
-    const today = new Date();
-    const from = new Date(today);
-    from.setDate(today.getDate() - Number(days));
-    const formatDate = (d: Date) => d.toISOString().slice(0, 10);
-
-    const transactions = await bankApiService.getTransactions(
-      {
-        provider,
-        username: username.trim(),
-        password,
-        accountNumber: targetAccountNo || account.accountNumber,
-        browserId: activeBrowserId,
-      },
-      formatDate(from),
-      formatDate(today)
-    );
-
-    setStatusMessage('Đang đồng bộ vào sổ giao dịch...');
-    const importResult = await dataService.importBankTransactions(
-      account.id,
-      transactions,
-      currentBalance
-    );
-
-    const { storageService } = await import('../../services/storage');
-    storageService.saveAccountCredential(account.id, {
-      username: username.trim(),
-      password,
+    setStatusMessage('Đang lưu thông tin mã hóa và đồng bộ giao dịch...');
+    const result = await bankApiService.syncBank({
+      provider, username: username.trim(), password,
+      accountNumber: targetAccountNo || account.accountNumber,
       browserId: activeBrowserId,
-    });
-
-    await dataService.updateAccount(account.id, {
-      currentBalance,
-      lastSyncedAt: Date.now(),
+      bankName: account.bankName, displayName: account.displayName, color: account.color,
+      initialBalance: account.initialBalance, forceFull: true,
     });
 
     onSuccess(
-      `Đồng bộ ${account.bankName} thành công! Nhập mới ${importResult.importedCount} giao dịch, số dư hiện tại: ${importResult.updatedBalance.toLocaleString('vi-VN')} VND`
+      `Đồng bộ ${account.bankName} thành công! Đã lưu ${result.new_inserted_count} giao dịch mới. Số dư: ${result.current_balance.toLocaleString('vi-VN')} VND`
     );
     onClose();
   };
@@ -250,12 +221,13 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
         {errorMsg && (
           <div
             style={{
-              padding: '10px 14px',
+              padding: '12px 14px',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#fb7185',
-              fontSize: '0.825rem',
+              background: 'rgba(225, 29, 72, 0.1)',
+              border: '1px solid rgba(225, 29, 72, 0.3)',
+              color: 'var(--accent-expense)',
+              fontWeight: 600,
+              fontSize: '0.85rem',
               marginBottom: '16px',
               display: 'flex',
               alignItems: 'center',
@@ -322,12 +294,12 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
                 </select>
               </div>
               {Number(days) > 30 && (
-                <p style={{ fontSize: '0.75rem', color: '#a5b4fc', marginTop: '6px', lineHeight: 1.4 }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--accent-primary)', marginTop: '6px', lineHeight: 1.4, fontWeight: 500 }}>
                   ⚡ Tự động chia nhỏ thành các đợt 30 ngày tuần tự để ngân hàng không chặn tải.
                 </p>
               )}
               {getBankProvider(account.bankName) === 'BIDV' && (
-                <p style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '6px', lineHeight: 1.4 }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--accent-income)', marginTop: '6px', lineHeight: 1.4, fontWeight: 500 }}>
                   📱 BIDV: Nếu đây là lần đầu đồng bộ thiết bị này, hãy mở app BIDV SmartBanking trên điện thoại và bấm Xác nhận khi có yêu cầu.
                 </p>
               )}
@@ -339,7 +311,8 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
                   padding: '12px',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(99, 102, 241, 0.12)',
-                  color: '#a5b4fc',
+                  color: 'var(--accent-primary)',
+                  fontWeight: 600,
                   fontSize: '0.825rem',
                   display: 'flex',
                   alignItems: 'center',
@@ -414,7 +387,7 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
                 />
               </div>
 
-              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: countdown > 0 ? '#a5b4fc' : '#fb7185' }}>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: countdown > 0 ? 'var(--accent-primary)' : 'var(--accent-expense)', fontWeight: 600 }}>
                 {countdown > 0 ? (
                   <span>
                     Hiệu lực: <strong>{Math.floor(countdown / 60).toString().padStart(2, '0')}:{(countdown % 60).toString().padStart(2, '0')}</strong>
@@ -431,7 +404,8 @@ export const SyncBankModal: React.FC<SyncBankModalProps> = ({
                   padding: '12px',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
+                  color: 'var(--accent-income)',
+                  fontWeight: 600,
                   fontSize: '0.825rem',
                   display: 'flex',
                   alignItems: 'center',

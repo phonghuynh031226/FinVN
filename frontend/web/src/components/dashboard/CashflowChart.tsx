@@ -124,11 +124,11 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
               width: '28px',
               height: '28px',
               borderRadius: '8px',
-              background: 'rgba(99, 102, 241, 0.15)',
+              background: 'rgba(99, 102, 241, 0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#818cf8',
+              color: 'var(--accent-primary)',
             }}
           >
             <BarChart3 size={16} />
@@ -150,12 +150,12 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
           {totalDays > 1 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#10b981' }} />
-                <span style={{ color: '#10b981', fontWeight: 600 }}>+{formatCompactVND(totalPeriodIncome)}</span>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--accent-income)' }} />
+                <span style={{ color: 'var(--accent-income)', fontWeight: 700 }}>+{formatCompactVND(totalPeriodIncome)}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#fb7185' }} />
-                <span style={{ color: '#fb7185', fontWeight: 600 }}>-{formatCompactVND(totalPeriodExpense)}</span>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: 'var(--accent-expense)' }} />
+                <span style={{ color: 'var(--accent-expense)', fontWeight: 700 }}>-{formatCompactVND(totalPeriodExpense)}</span>
               </div>
             </div>
           )}
@@ -164,10 +164,10 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
             <div
               style={{
                 display: 'flex',
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'var(--bg-tertiary)',
                 padding: '2px',
                 borderRadius: '6px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border-subtle)',
               }}
             >
               <button
@@ -355,8 +355,9 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
               >
                 <span
                   style={{
-                    fontSize: '0.65rem',
-                    color: 'rgba(148, 163, 184, 0.4)',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
                     width: '36px',
                     textAlign: 'right',
                     flexShrink: 0,
@@ -367,7 +368,7 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                 <div
                   style={{
                     flex: 1,
-                    borderTop: '1px dashed rgba(255, 255, 255, 0.07)',
+                    borderTop: '1px dashed var(--border-subtle)',
                     height: 0,
                   }}
                 />
@@ -422,32 +423,32 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                           position: 'absolute',
                           bottom: '100%',
                           marginBottom: '8px',
-                          background: 'rgba(15, 23, 42, 0.95)',
-                          border: '1px solid rgba(99, 102, 241, 0.4)',
+                          background: 'var(--bg-secondary)',
+                          border: '1px solid var(--border-hover)',
                           backdropFilter: 'blur(12px)',
-                          borderRadius: '8px',
-                          padding: '8px 12px',
+                          borderRadius: '10px',
+                          padding: '9px 13px',
                           fontSize: '0.75rem',
                           zIndex: 30,
                           whiteSpace: 'nowrap',
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                          boxShadow: 'var(--shadow-lg)',
                           pointerEvents: 'none',
                         }}
                       >
-                        <div style={{ fontWeight: 700, marginBottom: '4px', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Calendar size={13} color="#818cf8" />
+                        <div style={{ fontWeight: 700, marginBottom: '5px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <Calendar size={13} color="var(--accent-primary)" />
                           {getWeekdayShort(day)}, {dayjs(day).format('DD/MM/YYYY')}
                         </div>
                         {hasActivity ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ color: '#10b981', fontWeight: 600 }}>+ {formatVND(data.income)}</div>
-                            <div style={{ color: '#fb7185', fontWeight: 600 }}>- {formatVND(data.expense)}</div>
-                            <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: '3px', paddingTop: '3px', color: 'var(--text-muted)' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ color: 'var(--accent-income)', fontWeight: 700 }}>+ {formatVND(data.income)}</div>
+                            <div style={{ color: 'var(--accent-expense)', fontWeight: 700 }}>- {formatVND(data.expense)}</div>
+                            <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '4px', paddingTop: '4px', color: 'var(--text-secondary)', fontWeight: 500 }}>
                               {data.count} giao dịch
                             </div>
                           </div>
                         ) : (
-                          <div style={{ color: 'var(--text-muted)' }}>Không phát sinh giao dịch</div>
+                          <div style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Không phát sinh giao dịch</div>
                         )}
                       </div>
                     )}
@@ -471,10 +472,10 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                                 width: totalDays <= 8 ? '16px' : '45%',
                                 maxWidth: '16px',
                                 height: `${incomeHeight}px`,
-                                background: 'linear-gradient(180deg, #10b981 0%, rgba(16, 185, 129, 0.4) 100%)',
+                                background: 'linear-gradient(180deg, var(--accent-income) 0%, rgba(16, 185, 129, 0.4) 100%)',
                                 borderRadius: '4px 4px 1px 1px',
                                 transition: 'height 0.3s ease, filter 0.2s',
-                                filter: isHovered ? 'brightness(1.3) drop-shadow(0 0 6px rgba(16, 185, 129, 0.6))' : 'none',
+                                filter: isHovered ? 'brightness(1.2) drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))' : 'none',
                               }}
                             />
                           )}
@@ -484,10 +485,10 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                                 width: totalDays <= 8 ? '16px' : '45%',
                                 maxWidth: '16px',
                                 height: `${expenseHeight}px`,
-                                background: 'linear-gradient(180deg, #fb7185 0%, rgba(251, 113, 133, 0.4) 100%)',
+                                background: 'linear-gradient(180deg, var(--accent-expense) 0%, rgba(244, 63, 94, 0.4) 100%)',
                                 borderRadius: '4px 4px 1px 1px',
                                 transition: 'height 0.3s ease, filter 0.2s',
-                                filter: isHovered ? 'brightness(1.3) drop-shadow(0 0 6px rgba(251, 113, 133, 0.6))' : 'none',
+                                filter: isHovered ? 'brightness(1.2) drop-shadow(0 0 6px rgba(244, 63, 94, 0.5))' : 'none',
                               }}
                             />
                           )}
@@ -497,7 +498,7 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                           style={{
                             width: '4px',
                             height: '1px',
-                            background: isHovered ? 'rgba(96, 165, 250, 0.4)' : 'rgba(255, 255, 255, 0.06)',
+                            background: isHovered ? 'var(--accent-primary)' : 'var(--border-subtle)',
                             transition: 'background 0.2s',
                           }}
                         />
@@ -510,13 +511,13 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                         style={{
                           position: 'absolute',
                           bottom: -18,
-                          fontSize: totalDays <= 8 ? '0.68rem' : '0.62rem',
+                          fontSize: totalDays <= 8 ? '0.72rem' : '0.65rem',
                           color: isHovered
-                            ? '#60a5fa'
+                            ? 'var(--accent-primary)'
                             : hasActivity
-                            ? 'rgba(241, 245, 249, 0.95)'
+                            ? 'var(--text-primary)'
                             : 'var(--text-muted)',
-                          fontWeight: hasActivity || isHovered ? 700 : 500,
+                          fontWeight: hasActivity || isHovered ? 700 : 600,
                           whiteSpace: 'nowrap',
                           letterSpacing: '-0.3px',
                           transition: 'color 0.15s ease',
@@ -538,7 +539,7 @@ export const CashflowChart: React.FC<CashflowChartProps> = ({ transactions, star
                           width: '3px',
                           height: '3px',
                           borderRadius: '50%',
-                          background: isHovered ? '#60a5fa' : 'rgba(255, 255, 255, 0.2)',
+                          background: isHovered ? 'var(--accent-primary)' : 'var(--border-subtle)',
                           transition: 'background 0.2s',
                         }}
                       />

@@ -20,19 +20,23 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, o
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '9px 12px',
+        padding: '10px 14px',
         cursor: 'pointer',
         transition: 'all var(--transition-fast)',
         gap: '10px',
-        background: 'rgba(255, 255, 255, 0.03)',
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateX(3px)';
-        e.currentTarget.style.borderColor = isIncome ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+        e.currentTarget.style.borderColor = isIncome ? 'var(--accent-income)' : 'var(--accent-expense)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = 'none';
         e.currentTarget.style.borderColor = 'var(--border-subtle)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.03)';
       }}
     >
       {/* Left: Type Icon & Details */}
@@ -46,7 +50,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, o
             alignItems: 'center',
             justifyContent: 'center',
             background: isIncome ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-            color: isIncome ? '#10b981' : '#fb7185',
+            color: isIncome ? 'var(--accent-income)' : 'var(--accent-expense)',
             flexShrink: 0,
           }}
         >
@@ -67,12 +71,12 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, o
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.785rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.785rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
             <span>{formatDisplayDateTime(transaction.transactionDate)}</span>
             {transaction.bankAccount?.bankName && (
               <>
-                <span>•</span>
-                <span>{transaction.bankAccount.bankName}</span>
+                <span style={{ color: 'var(--border-hover)' }}>•</span>
+                <span style={{ color: 'var(--text-muted)' }}>{transaction.bankAccount.bankName}</span>
               </>
             )}
           </div>
@@ -85,7 +89,7 @@ export const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, o
           style={{
             fontSize: '1.05rem',
             fontWeight: 800,
-            color: isIncome ? '#10b981' : '#fb7185',
+            color: isIncome ? 'var(--accent-income)' : 'var(--accent-expense)',
           }}
         >
           {formatSignedVND(transaction.amount, transaction.type)}

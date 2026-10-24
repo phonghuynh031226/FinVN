@@ -1,6 +1,6 @@
 import { BankConnectionResult, ConnectBankAccountInput } from '../types/bankAccount';
 
-const CONNECTOR_URL = import.meta.env.VITE_BANK_CONNECTOR_URL as string | undefined;
+const CONNECTOR_URL = ((import.meta.env.VITE_BANK_CONNECTOR_URL as string | undefined)?.trim() || window.location.origin).replace(/\/$/, '');
 
 export interface BankTransaction {
   transaction_date: string | null;
@@ -14,8 +14,13 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const headers = new Headers(options.headers);
+    const csrf = document.cookie.split('; ').find((part) => part.startsWith('finvn_csrf='))?.split('=').slice(1).join('=');
+    if (csrf && !['GET', 'HEAD', 'OPTIONS'].includes((options.method || 'GET').toUpperCase())) headers.set('X-CSRF-Token', decodeURIComponent(csrf));
     const res = await fetch(url, {
       ...options,
+      headers,
+      credentials: 'include',
       signal: controller.signal,
     });
     return res;
@@ -118,5 +123,49 @@ export const bankApiService = {
     const payload = await response.json().catch(() => null);
     if (!response.ok) throw new Error(payload?.detail || payload?.message || 'Không thể lấy lịch sử giao dịch.');
     return payload as BankTransaction[];
+  },
+
+  async syncBank(input: ConnectBankAccountInput & {
+    bankName: string;
+    displayName: string;
+    color?: string;
+    initialBalance?: number;
+    forceFull?: boolean;
+  }): Promise<{
+    status: string;
+    account: any;
+    mode: 'INCREMENTAL' | 'FULL';
+    from_date: string;
+    to_date: string;
+    fetched_count: number;
+    new_inserted_count: number;
+    current_balance: number;
+    browser_id?: string;
+  }> {
+    if (!CONNECTOR_URL) throw new Error('Chưa cấu hình máy chủ kết nối ngân hàng.');
+    const response = await fetchWithTimeout(`${CONNECTOR_URL.replace(/\/$/, '')}/api/banks/${input.provider.toLowerCase()}/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: input.username,
+        password: input.password,
+        browser_id: input.browserId,
+        account_number: input.accountNumber,
+        bank_name: input.bankName,
+        display_name: input.displayName,
+        color: input.color,
+        initial_balance: input.initialBalance,
+        force_full: Boolean(input.forceFull),
+      }),
+    }, 60000);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(payload?.detail || payload?.message || 'Không thể đồng bộ ngân hàng.');
+    return payload;
+  },
+  async syncSavedAccount(accountId: string): Promise<void> {
+    if (!CONNECTOR_URL) throw new Error('Chưa cấu hình máy chủ kết nối ngân hàng.');
+    const response = await fetchWithTimeout(`${CONNECTOR_URL.replace(/\/$/, '')}/api/accounts/${encodeURIComponent(accountId)}/sync`, { method: 'POST' }, 60000);
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(payload?.detail || 'Không thể đồng bộ tài khoản.');
   },
 };
