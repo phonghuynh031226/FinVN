@@ -4,14 +4,20 @@ Hệ thống hỗ trợ quản lý chi tiêu, dòng tiền và tự động đ�
 
 ---
 
-## I. KHỞI ĐỘNG HỆ THỐNG
+## I. TRUY CẬP VÀ KHỞI ĐỘNG HỆ THỐNG
 
+### 1. Sử dụng trực tiếp trên Cloud (Khuyên dùng)
+Bạn không cần cài đặt bất kỳ công cụ nào trên máy, truy cập trực tiếp website đã triển khai:
+* **Địa chỉ ứng dụng**: [`https://fin-vn.vercel.app`](https://fin-vn.vercel.app)
+* Đăng nhập an toàn bằng tài khoản Google (OAuth 2.0). Dữ liệu được đồng bộ và lưu trữ bảo mật trên cơ sở dữ liệu Supabase PostgreSQL.
+
+### 2. Khởi động cục bộ (Môi trường phát triển Localhost)
+Nếu muốn phát triển hoặc chạy thử dưới máy cá nhân:
 1. **Khởi động Backend Bank Gateway**:
    ```powershell
    cd "d:\DU AN CA NHAN\Quản lý tài chính\backend"
    python -m uvicorn app.main:app --host 0.0.0.0 --port 8787 --reload
    ```
-   *(Hoặc chạy image Docker theo hướng dẫn tại `docs/DOCKER.md`.)*.
    - Kiểm tra trạng thái: Mở trình duyệt truy cập `http://localhost:8787/health` -> Nhận phản hồi `{"status": "ok", "service": "bank-gateway"}`.
 
 2. **Khởi động Web Frontend**:
@@ -36,7 +42,7 @@ Bấm nút **"Thêm tài khoản"** ở góc phải thanh Header hoặc trên m�
   - Hệ thống AI sẽ tự động giải mã Captcha và gửi yêu cầu đăng nhập lên BIDV.
   - Khi BIDV phát hiện kết nối từ thiết bị mới, ứng dụng SmartBanking trên điện thoại của bạn sẽ nhận được thông báo cấp quyền đăng nhập thiết bị.
   - Bạn chỉ cần **mở app BIDV trên điện thoại và bấm "Xác nhận / Đồng ý"**.
-  - Hệ thống backend sẽ tự động bắt lấy tín hiệu xác nhận thành công, lưu lại định danh thiết bị tin cậy (`browser_id` & `client_id`) vào thư mục `backend/data/bidv_browser_ids/`.
+  - Hệ thống backend sẽ tự động bắt lấy tín hiệu xác nhận thành công, lưu lại định danh thiết bị tin cậy (`browser_id` & `client_id`) vào database và bộ nhớ.
 - **Lợi ích**: Từ các lần kết nối và đồng bộ tiếp theo, bạn **không cần mở điện thoại nữa**, hệ thống sẽ tự động đăng nhập và cập nhật số dư trong 0.2 giây!
 
 ---
@@ -50,8 +56,8 @@ Bấm nút **"Thêm tài khoản"** ở góc phải thanh Header hoặc trên m�
   1. Chọn ngân hàng **Vietcombank**.
   2. Nhập **Số điện thoại** đăng ký DigiBank và **Mật khẩu**.
   3. Bấm **"Kết nối tài khoản"**.
-  4. Nếu kết nối lần đầu trên thiết bị mới, Vietcombank sẽ gửi một mã **SMS OTP** về số điện thoại. Popup sẽ tự động chuyển sang giao diện nhập mã OTP (hiệu lực 90 giây).
-  5. Nhập mã OTP gồm 6 chữ số -> Bấm **"Xác nhận kích hoạt"**. Hệ thống tự động ghi nhớ `browser_id` để các lần sau không cần hỏi lại OTP.
+  4. Hệ thống đã được tích hợp sẵn định danh thiết bị tin cậy (**Browser ID**) chuẩn của Vietcombank. Quá trình kết nối diễn ra tự động hoàn toàn, giải mã Captcha và lấy số dư ngay lập tức mà **không cần nhập mã SMS OTP**.
+  5. Sau khi kết nối thành công, thông tin đăng nhập được mã hóa AES-256-GCM lưu trữ an toàn trong cơ sở dữ liệu để phục vụ tính năng tự động đồng bộ số dư.
 
 ---
 

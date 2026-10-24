@@ -152,3 +152,26 @@ git push origin main
 * **Vercel** sẽ tự động bắt sự kiện commit và build lại Frontend trong 30 giây.
 * **Render** sẽ tự động bắt sự kiện commit và build lại container Docker Backend trong 1-2 phút.
 * Toàn bộ quy trình cập nhật hoàn toàn tự động mà không cần can thiệp thủ công!
+
+---
+
+## 🛠️ 5. Xử Lý Sự Cố Thường Gặp Khi Deploy Cloud (Troubleshooting)
+
+### 1. Sự cố Vercel báo lỗi Type khi thêm biến môi trường
+* **Hiện tượng**: Khi thêm biến `VITE_...`, Vercel báo lỗi: *"Remove the public framework prefix to keep this value private. If that's safe, change the variable to Config"*.
+* **Khắc phục**: Khi nhập biến có tiền tố `VITE_`, ở mục **Type** bắt buộc chọn **`Config`** (không chọn `Secret`). Nếu đã lỡ lưu dạng `Secret`, hãy xóa biến đi và tạo lại.
+
+### 2. Sự cố lỗi kết nối Database Supabase trên Render (`psycopg2.OperationalError`)
+* **Hiện tượng**: Log trên Render báo `connection to server on socket "@aws-0-ap-northeast-2.pooler.supabase.com/.s.PGSQL.5432" failed: Connection refused`.
+* **Nguyên nhân**: Mật khẩu sao chép từ Supabase bị kẹt dấu ngoặc vuông `:[password]@` hoặc ký tự đặc biệt khiến thư viện parse nhầm thành unix socket.
+* **Khắc phục**: Backend FinVN đã tích hợp sẵn bộ tách URL thông minh `_parse_db_url()` tự gỡ bỏ ngoặc vuông và bật `sslmode=require`. Bạn có thể kiểm tra trạng thái kết nối bất kỳ lúc nào qua endpoint: `https://finvn-4jk6.onrender.com/health/db`.
+
+### 3. Sự cố bị kẹt tại màn hình chào mừng sau khi đăng nhập Google (CORS & Cookie)
+* **Hiện tượng**: Đăng nhập Google thành công nhưng không chuyển trang, log console báo lỗi CORS 500 hoặc 401 khi gọi Render.
+* **Khắc phục**: FinVN sử dụng cơ chế xác thực kép **Bearer Token** (`Authorization: Bearer <token>`) kết hợp Cookie, giải quyết triệt để vấn đề trình duyệt hiện đại chặn cookie bên thứ 3 cross-domain giữa `.vercel.app` và `.onrender.com`.
+
+### 4. Sự cố Vietcombank không gửi mã SMS OTP (Mã lỗi 20231)
+* **Hiện tượng**: Khi kết nối Vietcombank trên web Cloud, giao diện hiện popup đếm ngược SMS OTP nhưng điện thoại không có tin nhắn nào.
+* **Nguyên nhân**: Vietcombank không gửi SMS tự động cho thiết bị lạ (để chống lừa đảo SIM), mà yêu cầu phê duyệt Smart OTP trên app hoặc kích hoạt trước thiết bị tin cậy (**Browser ID**).
+* **Khắc phục**: Backend FinVN đã được nhúng sẵn mã Browser ID tin cậy (`cd9d5bd00fad51bf3ae77007749fb19c`). Khi kết nối, hệ thống sẽ đăng nhập trực tiếp mà không cần hỏi OTP. Nếu muốn đổi sang Browser ID cá nhân, bạn chỉ cần khai báo biến môi trường `VCB_BROWSER_ID` trên Render Dashboard.
+

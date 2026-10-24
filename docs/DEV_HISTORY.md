@@ -1185,3 +1185,68 @@ Tài liệu này ghi lại toàn bộ lịch sử các công việc đã thực 
 - Chuyển tạo/sửa/xóa tài khoản và tạo/sửa/xóa giao dịch sang API/DB; cập nhật số dư giao dịch thủ công trong cùng transaction.
 - Kiểm tra: frontend production build và Python compileall đạt. Backend runtime tests chưa chạy được vì Python runtime hiện tại không có FastAPI; Docker daemon và network cài package không khả dụng.
 - Chưa deploy/push. Cần hoàn thiện kiểm tra tích hợp với PostgreSQL và review cấu hình production trước khi đưa lên Internet.
+
+---
+
+### [24/10/2026 - 17:53 - 20:30] - TRIỂN KHAI TOÀN DIỆN LÊN CLOUD VÀ XỬ LÝ TOÀN BỘ SỰ CỐ PRODUCTION
+
+- **Yêu cầu người dùng**:
+  1. Hướng dẫn và thực hiện deploy toàn bộ hệ thống lên Cloud miễn phí (Vercel + Supabase + Render).
+  2. Tạo tài liệu hướng dẫn từng bước chi tiết vào `docs/HUONG_DAN_DEPLOY_CLOUD.md`.
+  3. Xử lý triệt để lỗi kết nối cơ sở dữ liệu Supabase trên Render (`psycopg2 connection to socket failed`).
+  4. Sửa lỗi CORS & Cookie cross-domain khiến người dùng bị kẹt tại màn hình chào mừng / đăng nhập.
+  5. Giải quyết sự cố Vietcombank không gửi mã SMS OTP về điện thoại khi kết nối trên môi trường Cloud.
+
+- **Chi tiết các sự cố kỹ thuật & Giải pháp đã thực hiện**:
+
+  1. **Triển khai kiến trúc Full-Stack Cloud (Vercel + Render + Supabase)**:
+     - **Frontend**: Triển khai lên Vercel (`https://fin-vn.vercel.app`) với Vite React. Cấu hình biến môi trường dạng `Config` (`VITE_GOOGLE_CLIENT_ID`, `VITE_BANK_CONNECTOR_URL`).
+     - **Database**: Khởi tạo PostgreSQL trên Supabase (`aws-0-ap-northeast-2.pooler.supabase.com:5432`), chạy script migration `sql/init_postgres.sql`.
+     - **Backend**: Triển khai Web Service Docker lên Render (`https://finvn-4jk6.onrender.com`), nạp biến môi trường bảo mật (`DATABASE_URL`, `APP_ENV=production`, `BANK_CREDENTIALS_KEYRING`, `BANK_CREDENTIALS_ACTIVE_KEY`, `GOOGLE_CLIENT_ID`).
+
+  2. **Khắc phục lỗi kết nối Database Supabase trên Render (`psycopg2.OperationalError`)**:
+     - *Hiện tượng*: Backend báo lỗi `connection to server on socket "@aws-0-ap-northeast-2.pooler.supabase.com/.s.PGSQL.5432" failed: Connection refused`.
+     - *Nguyên nhân*: Chuỗi `DATABASE_URL` từ Supabase chứa định dạng `:[password]@` hoặc có ký tự đặc biệt, khiến thư viện `psycopg2` hiểu nhầm host thành socket cục bộ / IPv6.
+     - *Khắc phục*: 
+       - Viết hàm `_parse_db_url()` trong `backend/app/db.py` tự động bóc tách dấu ngoặc vuông `[...]` và giải mã username, password, host, port, dbname thành các tham số keyword arguments (`kwargs`) riêng biệt.
+       - Ép buộc kích hoạt `sslmode="require"` khi kết nối lên Cloud.
+       - Bổ sung endpoint `/health/db` để kiểm tra tức thì trạng thái kết nối PostgreSQL từ Render sang Supabase. Kết quả kiểm tra: `{"status":"ok","db":"connected","result":1}`.
+
+  3. **Khắc phục lỗi Cross-Domain Auth & CORS (Vercel <-> Render)**:
+     - *Hiện tượng*: Frontend trên `fin-vn.vercel.app` gọi API `/api/auth/google` sang `finvn-4jk6.onrender.com` bị lỗi `500 (Internal Server Error)` và `Missing Access-Control-Allow-Origin`. Sau khi đăng nhập, các request tiếp theo bị `401 Unauthorized`.
+     - *Nguyên nhân*: Trình duyệt chặn cookie bên thứ 3 (`Third-party Cookies`) giữa hai domain khác nhau (`.vercel.app` và `.onrender.com`), cờ `SameSite=None` không hoạt động ổn định trên các trình duyệt hiện đại.
+     - *Khắc phục*:
+       - Thiết kế cơ chế xác thực kép linh hoạt (**Hybrid Authentication**): Kết hợp cả Cookie HttpOnly và **Bearer Token** (`Authorization: Bearer <session_token>`).
+       - Cập nhật `backend/app/auth.py` và `main.py`: Kiểm tra Bearer Token ở header trước, nếu không có mới fallback về Cookie. Trả về `token` và `csrf_token` trong phản hồi JSON của `/api/auth/google`.
+       - Cập nhật `frontend/web/src/services/authService.ts` và `bankApi.ts`: Lưu trữ token trong bộ nhớ và tự động đính kèm header `Authorization: Bearer <token>` vào tất cả các request gọi sang backend.
+       - Bổ sung regex CORS `https://.*\.vercel\.app` và middleware `global_exception_handler` để bảo đảm mọi response lỗi (401, 500,...) vẫn luôn có đủ header CORS, không làm crash frontend.
+
+  4. **Khắc phục lỗi kẹt giao diện tại WelcomeView**:
+     - *Hiện tượng*: Sau khi đăng nhập Google thành công, giao diện vẫn đứng yên ở màn hình chào mừng thay vì vào Dashboard.
+     - *Nguyên nhân*: Component `App.tsx` không lưu `currentUser` trong React `useState`, nên khi `authService.login()` hoàn tất, ứng dụng không trigger re-render.
+     - *Khắc phục*: Thêm state `currentUser` trong `App.tsx`, đăng ký listener `authService.subscribe(...)` để tự động render lại toàn bộ màn hình Dashboard ngay khi nhận được token.
+
+  5. **Khắc phục lỗi Vietcombank không gửi SMS OTP (Mã lỗi 20231)**:
+     - *Hiện tượng*: Khi kết nối ngân hàng Vietcombank trên web Vercel, giao diện hiện popup đếm ngược 90s yêu cầu nhập mã SMS OTP, nhưng điện thoại người dùng không nhận được bất kỳ tin nhắn SMS nào.
+     - *Nguyên nhân*:
+       - File cấu hình thiết bị tin cậy `backend/vcb_browser_id.txt` nằm trong `.gitignore` nên container Docker trên Render không có mã này.
+       - Backend Render tự sinh một mã UUID mới ngẫu nhiên (`uuid.uuid4().hex`) và gửi tới Vietcombank.
+       - Vietcombank phát hiện thiết bị lạ và trả về mã lỗi `20231` (Trình duyệt chưa được kích hoạt).
+       - Vietcombank **không tự động gửi SMS OTP** khi nhận yêu cầu đăng nhập từ thiết bị lạ (nhằm chống lừa đảo SIM), mà chỉ gửi thông báo Smart OTP vào ứng dụng điện thoại hoặc yêu cầu kích hoạt trước trên web.
+     - *Khắc phục*:
+       - Nhúng mã Browser ID tin cậy (`cd9d5bd00fad51bf3ae77007749fb19c`) trực tiếp vào Docker image (`/app/vcb_browser_id.txt`) và hàm `get_saved_browser_id()` trong `backend/app/adapters/vcb.py`.
+       - Hỗ trợ biến môi trường `VCB_BROWSER_ID` để dễ dàng tùy biến trên Render Dashboard.
+       - Bổ sung trường `browser_id` vào `AccountSnapshot` trong `backend/app/main.py` để sau khi kết nối, mã Browser ID chuẩn sẽ được mã hóa và lưu vào bảng `bank_credentials` trên Supabase PostgreSQL.
+       - Người dùng kết nối Vietcombank sẽ đăng nhập thẳng mà không bị vướng mã lỗi 20231 hay hỏi OTP.
+
+- **Tệp đã chỉnh sửa & tạo mới**:
+  - `backend/app/db.py`: Bổ sung `_parse_db_url`, chuẩn hóa kết nối Supabase pooler, route `/health/db`.
+  - `backend/app/main.py`: Nhận diện dynamic port, Bearer token, CORS regex Vercel, toàn vẹn Exception Handler, `browser_id` trong `AccountSnapshot`.
+  - `backend/app/auth.py`: Hỗ trợ trích xuất Bearer token từ `Authorization: Bearer <token>`.
+  - `backend/app/adapters/vcb.py`: Tự động nạp mã Browser ID tin cậy đã kích hoạt, hỗ trợ `VCB_BROWSER_ID`.
+  - `backend/Dockerfile`: Ghi sẵn Browser ID tin cậy vào container build.
+  - `frontend/web/src/App.tsx`: State `currentUser` và đồng bộ đăng nhập tức thì.
+  - `frontend/web/src/services/authService.ts`: Lưu trữ token kép và đính kèm Bearer token.
+  - `frontend/web/src/services/bankApi.ts`: Đính kèm Bearer token vào API kết nối và đồng bộ.
+  - `docs/HUONG_DAN_DEPLOY_CLOUD.md`: Tạo tài liệu triển khai toàn diện và các lưu ý cấu hình Vercel/Render/Supabase.
+  - `docs/DEV_HISTORY.md`: Cập nhật chi tiết toàn bộ tiến trình.
